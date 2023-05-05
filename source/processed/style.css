@@ -1,0 +1,66 @@
+{{doc colors listed from lighter to darker}}
+{{define color1 "#E9E5FB"}}\
+{{define color2 "#907CE9"}}\
+{{define color3 "#4525D8"}}\
+{{define color4 "#2A1683"}}\
+{{define color5 "#110935"}}\
+{{define colorA "#F2A60A"}}\
+body {
+    margin: 0;
+    background: {{eval color4}};
+    color: {{eval color1}};
+    font-family: Helvetica;
+    font-size: 1.2em;
+}
+
+main {
+    margin: auto;
+    max-width: 60em;
+}
+
+footer {
+    background: {{eval color5}};
+    color: {{eval color1}};
+    margin: 0;
+    padding: 1.5em 0.4em 1.5em 0.4em;
+    text-align: center;
+}
+
+h1 {
+    color: {{eval colorA}};
+    margin: 0;
+    text-align: center;
+    padding: 1.5em 0.4em 1.5em 0.4em;
+}
+
+h2, h3, h4, h5, h6 {
+    color: {{eval colorA}};
+    margin: 0;
+    padding: 1.5em 0.4em 1.5em 0.4em;
+}
+
+p {
+    margin: 1em;
+}
+
+a {
+    color: {{eval colorA}};
+    line-height: 1.5em;
+}
+
+a:visited {
+    color: {{eval color2}};
+}
+
+blockquote {
+    margin: 1em 1em 1em 1em;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    border: solid 1px {{eval color2}};
+    color: {{eval color2}};
+    font-style: italic;
+}
+
+pre {
+    margin: 1em;
+    padding: 1.5em;
+}
