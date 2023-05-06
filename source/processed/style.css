@@ -1,9 +1,10 @@
-{{doc colors listed from lighter to darker}}
+{{doc colors listed from lighter to darker}}\
 {{define color1 "#E9E5FB"}}\
 {{define color2 "#907CE9"}}\
 {{define color3 "#4525D8"}}\
 {{define color4 "#2A1683"}}\
 {{define color5 "#110935"}}\
+{{doc other colors for more colorful details }}\
 {{define colorA "#F2A60A"}}\
 body {
     margin: 0;
@@ -63,4 +64,14 @@ blockquote {
 pre {
     margin: 1em;
     padding: 1.5em;
+    border: solid {{eval colorA}};
+    overflow: scroll;
+}
+
+pre > code {
+    color: {{eval color1}};
+}
+
+code {
+    color: {{eval colorA}};
 }
