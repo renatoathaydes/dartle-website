@@ -1,7 +1,8 @@
 {{ define title "Dartle" }}
 {{ include /processed/fragments/_header.html }}
-# Dartle Documentation
-<main>
+{{component /processed/fragments/_main.html}}
+{{define mainTitle "Dartle Documentation"}}
+
 Welcome to the Dartle Documentation.
 
 [![Dartle CI](https://github.com/renatoathaydes/dartle/workflows/Dartle%20CI/badge.svg)](https://github.com/renatoathaydes/dartle/)
@@ -21,7 +22,9 @@ How exactly you automate your build with Dartle depends on your needs:
 * Create [your own build system](dartle-derived-build-tool.html) that is distributed as a binary executable, using Dartle as just a library.
 * Use the advanced [Dartle Cache Library](dartle-cache.html) to drive an external build system or scripts.
 
-## Example
+{{end}}
+{{component /processed/fragments/_section.html}}
+{{ define sectionTitle "Real-world Example" }}
 
 This website you're reading is built using Dartle! Here's what the script looks like:
 
@@ -216,6 +219,5 @@ which commands to run, and when, is a task better left to Dartle).
 * [Integrating with the Dart build system](dart-build-system.html)
 
 {{end}}
-
-</main>
+{{end}}
 {{ include /processed/fragments/_footer.html }}
