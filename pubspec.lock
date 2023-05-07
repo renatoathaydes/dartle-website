@@ -61,10 +61,10 @@ packages:
     dependency: "direct dev"
     description:
       name: dartle
-      sha256: "4aa96c9e7d85f6fdc9faca4b9c288dc80cd014588bfffd88bf0252e212c68412"
+      sha256: "18d11271b547ac5e60729b0a85e2931f28f563c92f96c917cbc8c86c1c8b1a3f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.21.0"
+    version: "0.22.0"
   freezed_annotation:
     dependency: transitive
     description:
