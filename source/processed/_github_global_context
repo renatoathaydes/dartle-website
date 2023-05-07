@@ -1,1 +1,1 @@
-{{ define basePath "dartle-website" }}
+{{ define basePath "/dartle-website" }}
