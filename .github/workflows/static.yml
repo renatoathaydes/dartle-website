@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: dart pub get
       - name: Build
-        run: dart dartle.dart
+        run: "dart dartle.dart run :github"
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
