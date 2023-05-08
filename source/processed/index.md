@@ -1,9 +1,11 @@
-{{ define title "Dartle" }}
-{{ include /processed/fragments/_header.html }}
-{{component /processed/fragments/_main.html}}
-{{define mainTitle "Dartle Documentation"}}
+{{ define title "Dartle Home" }}\
+{{ define order 0 }}\
+{{ include /processed/fragments/_header.html }}\
+{{component /processed/fragments/_main.html}}\
+{{define mainTitle "Dartle Documentation"}}\
 
 Welcome to the Dartle Documentation.
+
 
 [![Dartle CI](https://github.com/renatoathaydes/dartle/workflows/Dartle%20CI/badge.svg)](https://github.com/renatoathaydes/dartle/)
 [![pub package](https://img.shields.io/pub/v/dartle.svg)](https://pub.dev/packages/dartle)
@@ -20,7 +22,7 @@ How exactly you automate your build with Dartle depends on your needs:
 * Write [Dart scripts](dartle-basics.html) to declare the build logic, like a more friendly and powerful Makefile.
 * Use [DartleDart](dartle-for-dart.html) to build Dart projects.
 * Create [your own build system](dartle-derived-build-tool.html) that is distributed as a binary executable, using Dartle as just a library.
-* Use the advanced [Dartle Cache Library](dartle-cache.html) to drive an external build system or scripts.
+* Use the advanced [Dartle Cache Library](cache.html) to drive an external build system or scripts.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
@@ -102,7 +104,7 @@ $ dartle
 
 You can execute any task you declared by passing its name as an argument to `dartle`.
 
-For example, to run the `runMagnanimous` task, type:
+For example, to run the `runMagnanimous` task:
 
 ```shell
 $ dartle runMagnanimous
@@ -110,114 +112,24 @@ $ dartle runMagnanimous
 ✔ Build succeeded in 110 ms
 ```
 
-Thanks for Dartle's Cache System, tasks only execute when necessary, so running the build again without changing anything
-does absolutely nothing!
+Dartle requires only a few letters to _find_ a task, so running `dartle run`, or `dartle rM` would work as well!
 
-> You can force tasks to run by using the `-f` flag. To completely reset the Dartle Cache, use `-z`.
-> To see all options, use `-h`.
+Thanks to Dartle's [Cache System](cache.html), tasks only execute when necessary, so running the build again without changing anything
+does basically nothing, which is why the build log above shows that no tasks needed to be executed!
 
-To see what tasks are available in a build, use the `-s` flag:
+> You can force tasks to run by using the `-f` flag.
+> To see all options, check the [Dart CLI](cli.html) page.
 
-```shell
-$ dartle -s
-======== Showing build information only, no tasks will be executed ========
+## What next?
 
-Tasks declared in this build:
-
-==> Setup Phase:
-  * clean
-==> Build Phase:
-  * downloadMagnanimous [up-to-date]
-      Download Magnanimous
-  * runMagnanimous [default] [out-of-date]
-      Builds the Dartle Website using Magnanimous
-==> TearDown Phase:
-  No tasks in this phase.
-
-The following tasks were selected to run, in order:
-
-  downloadMagnanimous
-      runMagnanimous
-```
-
-At the end of the output above, you can see the tasks that would've executed if the `-s` flag hadn't been given, so in a
-way, this is like a dry run where you can see not just which tasks exist, but which tasks would run given certain arguments.
-
-The `-g` option shows a task graph, which makes it easy to understand the tasks' dependencies:
-
-```shell
-$ dartle -g
-======== Showing build information only, no tasks will be executed ========
-
-Tasks Graph:
-
-- clean
-- downloadMagnanimous
-- runMagnanimous
-  \--- downloadMagnanimous
-
-The following tasks were selected to run, in order:
-
-  downloadMagnanimous
-      runMagnanimous
-```
-
-In very simple builds, this may not look very helpful, but on more complex builds, like the one below from a test Java project
-built using [`jb`](https://github.com/renatoathaydes/jb) (a Dartle-derived build system for Java), it can become quite handy:
-
-```shell
-Tasks Graph:
-
-- clean
-- compile
-  +--- installCompileDependencies
-  |     \--- writeDependencies
-  \--- installProcessorDependencies
-       \--- writeDependencies
-- createEclipseFiles
-  \--- installCompileDependencies ...
-- dependencies
-- downloadTestRunner
-- installRuntimeDependencies
-  \--- writeDependencies
-- requirements
-  \--- compile ...
-- runJavaMainClass
-  +--- compile ...
-  \--- installRuntimeDependencies ...
-- sample-task
-- test
-  +--- compile ...
-  |--- downloadTestRunner
-  \--- installRuntimeDependencies ...
-
-The following tasks were selected to run, in order:
-
-  writeDependencies
-      installCompileDependencies
-      installProcessorDependencies
-          compile
-```
-
-> Dartle currently comes with built-in support for [Dart](https://dart.dev) Projects.
-> 
-> Adding support for other languages and tools is easy, contributions are welcome! 
+To find out more, check some of the pages below:
 
 * [Getting Started](getting-started.html)
-* [Dartle Basics](dartle-basics.html)
-* [Using a Dartle Project](using-a-dartle-project.html)
-* [Writing Dartle Tasks](dartle-tasks.html)
+* [Dartle Overview](dartle-basics.html)
+* [Writing Dartle Tasks](tasks.html)
 {{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Working with Dart Projects" }}
 
-Dartle has built-in support for Dart Projects, making it easy to manage the lifecycle of Dart projects without having
-to remember when you need to invoke each Dart tool (even after all separate tools were unified in Dart 2.10, remembering
-which commands to run, and when, is a task better left to Dartle).
+I hope you enjoy using Dartle.
 
-* [Dartle for Dart Projects](dartle-for-dart.html)
-* [Integrating with the Dart build system](dart-build-system.html)
-
-{{end}}
 {{end}}
 {{ include /processed/fragments/_footer.html }}

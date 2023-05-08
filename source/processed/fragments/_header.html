@@ -5,6 +5,10 @@
     <title>{{ eval title }}</title>
     <meta name="description" content="Dartle Documentation">
     <meta name="author" content="Renato Athaydes">
-    <link rel="stylesheet" href="{{eval basePath}}/style.css">
+    <link rel="icon" type="image/png" href="{{eval basePath}}/dartle-logo-small.png">
+    <link rel="stylesheet" href="{{eval basePath}}/styles/style.css">
 </head>
 <body>
+<nav>
+{{ for page /processed }}<div style="order: {{eval page.order || 0}};"><a href="{{eval page}}">{{eval page.title}}</a></div>{{end}}
+</nav>

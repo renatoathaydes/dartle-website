@@ -1,11 +1,11 @@
-{{ define title "Getting Started" }}\
-{{ define order 1 }}\
+{{ define title "Derived Build Tools" }}\
+{{ define order 7 }}\
 {{ include /processed/fragments/_header.html }}\
 {{component /processed/fragments/_main.html}}\
 {{define mainTitle "Dartle Documentation"}}\
 
 {{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Install Dart" }}
+{{ define sectionTitle "Dartle as a Dart library" }}
 
 TODO
 

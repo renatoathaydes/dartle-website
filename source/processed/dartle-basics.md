@@ -1,14 +1,17 @@
-{{ define title "Dartle Basics" }}
-{{ include /processed/fragments/_header.html }}
-{{component /processed/fragments/_main.html}}
-{{define mainTitle "Dartle Documentation"}}
+{{ define title "Overview" }}\
+{{ define order 2 }}\
+{{ include /processed/fragments/_header.html }}\
+{{component /processed/fragments/_main.html}}\
+{{define mainTitle "Dartle Documentation"}}\
 
 {{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Dartle Basics" }}
+{{ define sectionTitle "Dartle Overview" }}
 
 The basic way to use Dartle is by writing a `dartle.dart` script which drives the build.
 
-We'll see soon how to run the script. But first, let's look at the basics of a Dartle script.
+> When using Dartle as a library, you'll also need to create Tasks and configure them, so this section is useful for that too.
+
+We'll see soon how to run that. But first, let's look at the basics of a Dartle script.
 
 ### Hello Dartle
 
@@ -31,7 +34,8 @@ Things to notice:
 * at least one `Task` must be declared, which in this case wraps a simple Dart function.
 * A `Task`'s function is what runs when the task runs, and has the basic signature `FutureOr<void> Function(List<String> args)`.
 
-> `Task` functions may also take more arguments for incremental compilation.
+> Task functions may also take a second argument for incremental compilation, as we'll see below.
+> For reference about Tasks, visit the [Dartle Tasks](tasks.html) page.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
