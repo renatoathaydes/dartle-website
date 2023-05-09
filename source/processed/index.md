@@ -6,9 +6,12 @@
 
 Welcome to the Dartle Documentation.
 
-
 [![Dartle CI](https://github.com/renatoathaydes/dartle/workflows/Dartle%20CI/badge.svg)](https://github.com/renatoathaydes/dartle/)
 [![pub package](https://img.shields.io/pub/v/dartle.svg)](https://pub.dev/packages/dartle)
+
+To learn Dartle from the basics, check out the [Dartle Overview](dartle-overview.html) page.
+
+For a quick introduction, read on.
 
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Introduction" }}
@@ -19,10 +22,54 @@ Dartle is a task-based build system written in the [Dart](https://dart.dev/) pro
 
 How exactly you automate your build with Dartle depends on your needs:
 
-* Write [Dart scripts](dartle-basics.html) to declare the build logic, like a more friendly and powerful Makefile.
+* Write [Dart scripts](dartle-overview.html) to declare the build logic, like a more friendly and powerful Makefile.
 * Use [DartleDart](dartle-for-dart.html) to build Dart projects.
 * Create [your own build system](dartle-derived-build-tool.html) that is distributed as a binary executable, using Dartle as just a library.
 * Use the advanced [Dartle Cache Library](cache.html) to drive an external build system or scripts.
+
+Dartle makes it easy to build most things using an easy, familiar language.
+
+For example, to compile all C files found in the `src` directory recursively, using `gcc`:
+
+```dart
+import 'dart:io';
+
+import 'package:dartle/dartle.dart';
+
+final cfiles = dir('src', fileExtensions: {'.c'});
+const output = 'mybinary';
+
+final gccTask = Task(gcc,
+    description: 'Compiles all C files in src/',
+    runCondition: RunOnChanges(inputs: cfiles, outputs: file(output)));
+
+main(List<String> args) => run(args, tasks: {gccTask});
+
+gcc(_) async => execProc(Process.start('gcc', [
+  '-o',
+  output,
+  ...await cfiles.resolveFiles().map((f) => f.path).toList(),
+]));
+```
+
+Pretty simple and highly readable, unlike most build solutions out there.
+
+In the same directory as the above `darle.dart` script, you can run `dartle gcc`:
+
+```shell
+$ dartle gcc
+2023-05-09 20:05:06.542846 - dartle[main 51081] - INFO - Executing 1 task out of a total of 1 task: 1 task selected
+2023-05-09 20:05:06.542944 - dartle[main 51081] - INFO - Running task 'gcc'
+✔ Build succeeded in 528 ms
+
+$ ./mybinary 
+It works!
+```
+
+The above `gcc` task will only execute if changes are detected on its inputs or outputs.
+
+The [Dartle Overview](dartle-overview.html) Section takes this basic example further and implements a fully incremental
+C build!
 
 {{end}}
 {{component /processed/fragments/_section.html}}
@@ -125,7 +172,7 @@ does basically nothing, which is why the build log above shows that no tasks nee
 To find out more, check some of the pages below:
 
 * [Getting Started](getting-started.html)
-* [Dartle Overview](dartle-basics.html)
+* [Dartle Overview](dartle-overview.html)
 * [Writing Dartle Tasks](tasks.html)
 {{end}}
 

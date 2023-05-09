@@ -11,7 +11,7 @@ The basic way to use Dartle is by writing a `dartle.dart` script which drives th
 
 > When using Dartle as a library, you'll also need to create Tasks and configure them, so this section is useful for that too.
 
-We'll see soon how to run that. But first, let's look at the basics of a Dartle script.
+We'll see a few options for how to run `dartle.dart` soon. But first, let's look at the mechanics of a Dartle script.
 
 ### Hello Dartle
 
@@ -43,7 +43,7 @@ Things to notice:
 
 There are a few ways to run a Dartle build.
 
-Let's start by using Dart to run it directly, given that a Dartle script is also a _normal_ Dart script.
+Let's start by using `dart` to run it directly, given that a Dartle script is also a _normal_ Dart script.
 
 We need to tell Dartle which task to run because there's no default task defined yet, so to run the `hello` task
 we run `dart dartle.dart hello`:
@@ -57,11 +57,11 @@ Hello Dartle
 ```
 
 This is the easiest way to do it, but it's not very fast because of Dart's startup time not being so great
-(Dartle's own observable time was 92ms, but the actual process takes around 1 full second to run on my Macbook Air,
+(Dartle's own observed time was `92ms`, but the actual process takes around 1 full second to run on my Macbook Air,
 which is annoying for a command you may want to run very often).
 
-For that reason, Dartle can be installed as an utility that manages the compilation of Dartle scripts so that when you run
-them, they start up instantly.
+For that reason, Dartle can be installed as an utility that manages the compilation of Dartle scripts so that when you
+need to run a build, it starts up much faster (unless the script needs to be recompiled).
 
 To activate `dartle`, run the following command:
 
@@ -69,9 +69,7 @@ To activate `dartle`, run the following command:
 $ dart pub global activate dartle
 ```
 
-Now, you should be able to run the Dartle build as follows:
-
-> If you get an error, make sure that `~/.pub-cache/bin` is on your `PATH`.
+Now, you should be able to run the build as follows:
 
 ```shell
 $ dartle hello
@@ -81,9 +79,14 @@ Hello Dartle
 ✔ Build succeeded in 0 ms
 ```
 
-This time, the script executes in around 250ms on my machine.
+> If you get an error, make sure that `~/.pub-cache/bin` is on your `PATH`.
 
-To make it **really** fast, you may want to compile it directly to a native binary as follows:
+This time, wall time was around 250ms on my machine. It's not instant, but feels quite fast.
+
+Using this approach, Dartle will automatically re-compile the script when needed, and if you add a default task
+to the build, you can just type `dartle` to run it, which is highly convenient.
+
+Finally, to make it run **really** fast, you may want to compile it directly to a native binary as follows:
 
 ```shell
 $ dart compile exe dartle.dart
@@ -91,10 +94,21 @@ Info: Compiling with sound null safety.
 Generated: /Users/renato/programming/projects/dartle-website/hello/dartle.exe
 ```
 
-Now, running `./dartle.exe hello` runs in just `0.050 seconds`! However, if you do that, you must remember to re-compile
-the script every time you make any changes. For this reason, the recommended way to run Dartle is by using the `dartle`
-utility, as that's plenty fast enough for most cases, while still being very convenient to use. Dartle will automatically
-re-compile the script when needed, and if you add a default task to the build, you can just type `dartle` to run it.
+Now, running `./dartle.exe hello` runs in just `0.050 seconds`, which really feels instant!
+
+Users who find it really important to have this sort of speed gain may find it worthwhile to use this approach
+(but notice that for most builds, actual tasks may take a lot longer to run, so the benefit of an instant startup
+may not materialize in real gains).
+
+Tools that [use Dartle as a library](dartle-derived-build-tool.html) will also benefit from this approach, normally.
+
+{{end}}
+{{component /processed/fragments/_section.html}}
+{{ define sectionTitle "A use case: compiling C code" }}
+
+In order to go through most Dartle features, the following sections will introduce each feature in the context of
+creating a C build tool, starting from a simple task that compiles a single file, and ending with a fully incremental
+build which can automatically determine dependencies between files, recompiling them only as necessary.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
@@ -103,20 +117,19 @@ re-compile the script when needed, and if you add a default task to the build, y
 To really benefit from Dartle, you need to tell it what the inputs/outputs of your tasks are, otherwise it has no way
 of knowing when it can skip running a Task.
 
-To declare the inputs/outputs of a Task, we use an implementation of `RunCondition`.
+To declare the inputs/outputs of a Task, an implementation of `RunCondition` can be used.
 
 To understand `RunCondition`, let's look at a simple build example to compile a C program. As you may know, you can
 ask the C compiler to
 [output an `.o` (object) file](https://beej.us/guide/bgc/html/split/multifile-projects.html#compiling-with-object-files)
 for each `.c` source file. The object files can be linked together into a final executable once they've been compiled.
 
-This means that we can compile only those files we're making changes to, without having to re-compile everything even
-if just a single file has changed. If we have a proper build system, we should be able to achieve that automatically.
+This means that it is not necessary to re-compile everything when a single file, or only a few, have changed.
+With a proper build system, it should be possible to achieve that automatically.
 
-With Dartle, we may achieve this in a few different ways. The simplest would be to declare a `Task` for each C file,
-so that we do not need to compute inputs/outputs at all, just explicitly declare them.
+To illustrate how Dartle can solve this problem, consider some basic C source code.
 
-First, create a `hello.c` file:
+`hello.c`
 
 ```c
 #include <stdio.h>
@@ -126,7 +139,9 @@ int main(void) {
 }
 ```
 
-Now, write a Dartle script to compile just this file:
+And a Dartle script to compile just this file.
+
+`dartle.dart`
 
 ```dart
 import 'dart:io';
@@ -147,15 +162,16 @@ Future<void> compileHello(_) =>
 
 Notice the `runCondition: RunOnChanges(...)` declaration, which lets Dartle know the exact inputs/outputs of the task.
 
-`file(...)` is a Dartle function that returns a `FileCollection`, which is a powerful tool to describe which files we're
-interested in (see [file-collections](file-collections.html) for details).
+`file(...)` is a Dartle function that returns a `FileCollection`, which is a powerful tool to describe which files the
+build requires and produces (see [File Collections](reference/file-collections.html) for details).
 
-The Task's function is now called `compileHello`, and it uses Dartle's `execProc(...)` and Dart's `Process` to execute `gcc`.
-`execProc(...)` does a few tricks, like not printing the process output by default unless there's an error and checking
-the exit code of the Process. There are more helpful functions to run Processes in Dartle, check out
-[Executing Processes](executing-processes.html) for more information.
+The Task's function is called `compileHello`, and it uses Dartle's `execProc(...)` and Dart's `Process` to execute `gcc`.
+`execProc(...)` can do a few tricks, like not printing the process output by default unless there's an error, and checking
+the exit code of the Process.
 
-Now, we're ready to compile! Run `dartle compile` and you should see the following:
+> For more helpful functions to run processes in Dartle, check out [Executing Processes](reference/executing-processes.html).
+
+Running `dartle compile` to execute the above script should result in something like this:
 
 ```shell
 $ dartle compile
@@ -170,7 +186,7 @@ $ dartle compile
 > name is not ambiguous. Uppercase letters are treated as if starting new words, which can be handy to disambiguate
 > names. For example, `compE` may match a task named `compileExecutable`, but not `compileBinary`.
 
-You should find a file called `hello.o` next to `hello.c`, which means that it worked!
+If everything worked, there should now be a file called `hello.o` next to `hello.c`.
 
 Running the build again should result in no Tasks actually running, as everything is up-to-date.
 
@@ -180,20 +196,20 @@ $ dartle compile
 ✔ Build succeeded in 3 ms
 ```
 
-If you delete the object file, or change the C file, Dartle will re-run the task.
+If the object file is deleted, or the C file modified, Dartle will re-run the task.
 
-It's very important to define the Task's inputs/outputs accurately, otherwise work that should be performed will be wrongly
+> It's very important to define the Task's inputs/outputs accurately, otherwise work that should be performed will be wrongly
 skipped, or the opposite, unnecessary work will be performed too often!
 
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Task dependencies" }}
 
-Another very important concept in Dartle is that of dependencies between tasks. If a task depends on another, it must
+Another very important concept in Dartle is that of dependencies between tasks. If a task depends on another, it will
 run AFTER the other task has been executed successfully. That also means that the inputs of a task are also inputs
 of any tasks that depend on it.
 
-Continuing with our C example, let's add another task to _link_ the object file (there's only one so far, but bear with me)
+Continuing with the C example, let's add another task to _link_ the object files (there's only one so far, but bear with me)
 into a single executable.
 
 The task function may be defined as follows:
@@ -211,7 +227,9 @@ Task(link,
   runCondition: RunOnChanges(outputs: file('hello')))
 ```
 
-Notice that this task only needs to declare outputs, because it already depends on other tasks which declare inputs.
+Notice that this task only needs to declare outputs, because it already depends on other tasks which declare their own
+inputs.
+
 The `link` task will run whenever any of the tasks it depends on (`compileHello` in this case) runs,
 so in a way, it _inherits_ its dependencies' inputs.
 
@@ -230,7 +248,7 @@ main(List<String> args) => run(args, tasks: {
     });
 ```
 
-Running `dartle link` should produce a `hello` file which can be executed immediately:
+Running `dartle link` should produce a file called `hello` which can be executed immediately:
 
 ```shell
 $ dartle link
@@ -238,7 +256,7 @@ $ dartle link
 2023-05-06 21:36:29.099146 - dartle[main 27775] - INFO - Running task 'link'
 ✔ Build succeeded in 102 ms
 
-./hello
+$ ./hello
 Hello, World!
 ```
 
@@ -250,7 +268,9 @@ We could keep declaring source files and their corresponding object files manual
 that can become difficult to manage.
 
 Let's do something better. We can still list the C source files explicitly in the build file, so that it's clear to
-everyone what we expect the build to compile. But the output files should be computed from the sources to avoid mistakes.
+everyone what is expected to be compiled (though as shown in the [Introduction](index.html),
+it's very easy to obtain every source file in a directory).
+But the output files should be computed from the sources to avoid mistakes.
 
 This can be done quite elegantly in Dart:
 
@@ -320,7 +340,7 @@ char* greeting(void) {
 }
 ```
 
-Finally, run everything:
+Finally, we can run the build again:
 
 ```shell
 $ dartle link
@@ -335,7 +355,8 @@ $ ./hello
 Olá, World!
 ```
 
-The only thing missing is to make the `compile` task **incremental**, so that only the modified files are re-compiled.
+It all works fine, but to make things better, the `compile` task should be **incremental**, i.e. only the modified files
+should be re-compiled. That's what the next section will address.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
@@ -426,12 +447,13 @@ Future<int> compile(List<String> args, [ChangeSet? changeSet]) async {
 
 It's become a fairly sophisticated task function now!
 
-It would be nice to keep "implementation details" like this out of the build file. To do that is easy, by using
-`dartle-src/`, as explained in the next section.
+And for this very reason, it would be nice to keep "implementation details" like this out of the build file.
+
+To do that is easy, by using `dartle-src/`, as explained in the next section.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Extracting complex logix into dartle-src/" }}
+{{ define sectionTitle "Extracting complex logic into dartle-src/" }}
 
 Complex tasks should not be written directly in the build script, as they can make it hard to understand what the build
 is supposed to do with too many details.
@@ -480,7 +502,7 @@ final outputs = [
 ];
 ```
 
-Now, `link.dart` can import 'config.dart':
+Now, `link.dart` can import `config.dart`:
 
 ```dart
 import 'package:dartle/dartle.dart';
@@ -522,7 +544,7 @@ Very simple, but powerful!
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Clean builds" }}
 
-Even though Dartle was designed to avoid the necessity of running clean builds, it's still possible there are mistakes
+Even though Dartle was designed to avoid the need for running clean builds, it's still possible there are mistakes
 that can prevent an incremental build from working. You may also want to test that things are still working when run
 from a clean environment.
 
@@ -607,5 +629,10 @@ $ dartle -l profile
 ```
 
 {{end}}
+
+<hr>
+
+With this, we come to the end of the Dartle Overview armed with a fully incremental C compiler!
+
 {{end}}
 {{ include /processed/fragments/_footer.html }}
