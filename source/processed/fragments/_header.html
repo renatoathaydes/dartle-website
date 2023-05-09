@@ -10,5 +10,5 @@
 </head>
 <body>
 <nav>
-{{ for page /processed }}<div style="order: {{eval page.order || 0}};"><a href="{{eval page}}">{{eval page.title}}</a></div>{{end}}
+{{ for page /processed }}<div style="order: {{eval page.order || 0}};"><a href="{{eval basePath}}{{eval page}}">{{eval page.title}}</a></div>{{end}}
 </nav>
