@@ -24,8 +24,9 @@ How exactly you automate your build with Dartle depends on your needs:
 
 * Write [Dart scripts](dartle-overview.html) to declare the build logic, like a more friendly and powerful Makefile.
 * Use [DartleDart](dartle-for-dart.html) to build Dart projects.
-* Create [your own build system](dartle-derived-build-tool.html) that is distributed as a binary executable, using Dartle as just a library.
-* Use the advanced [Dartle Cache Library](cache.html) to drive an external build system or scripts.
+* Create [your own build system](dartle-derived-build-tool.html) that is distributed as a binary executable, using
+  Dartle as just a library.
+* Use the [Dartle Cache](cache.html) to drive an external build system or scripts.
 
 Dartle makes it easy to build most things using an easy, familiar language.
 

@@ -32,10 +32,21 @@ Things to notice:
 * the script is a _standard_ Dart script, so it starts with a `main` function.
 * The `run` function is Dartle's entry point. Dartle expects `main`'s args to be passed into it.
 * at least one `Task` must be declared, which in this case wraps a simple Dart function.
-* A `Task`'s function is what runs when the task runs, and has the basic signature `FutureOr<void> Function(List<String> args)`.
+* A `Task`'s function is what runs when the task runs, and has the basic
+  signature `FutureOr<void> Function(List<String> args)`.
 
 > Task functions may also take a second argument for incremental compilation, as we'll see below.
 > For reference about Tasks, visit the [Dartle Tasks](tasks.html) page.
+
+The `hello` function shown above uses a very lightweight syntax, allowed by Dart's dynamic typing features
+(no return type or argument type declared) that can be used to keep scripts simple. But if you prefer, you can declare
+the types:
+
+```dart
+Future<void> hello(List<String> args) => print('Hello Dartle');
+```
+
+Dartle cannot distinguish between the two versions, so feel free to use whatever you prefer.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
@@ -192,14 +203,14 @@ Running the build again should result in no Tasks actually running, as everythin
 
 ```shell
 $ dartle compile
-2023-05-06 21:05:01.998423 - dartle[main 26551] - INFO - Executing 0 tasks out of a total of 1 task: 1 task selected, 1 up-to-date
+Everything is up-to-date!
 ✔ Build succeeded in 3 ms
 ```
 
 If the object file is deleted, or the C file modified, Dartle will re-run the task.
 
 > It's very important to define the Task's inputs/outputs accurately, otherwise work that should be performed will be wrongly
-skipped, or the opposite, unnecessary work will be performed too often!
+> skipped, or the opposite, unnecessary work will be performed too often!
 
 {{end}}
 {{component /processed/fragments/_section.html}}
@@ -223,15 +234,15 @@ And the `Task` itself:
 
 ```dart
 Task(link,
-  dependsOn: {'compileHello'},
-  runCondition: RunOnChanges(outputs: file('hello')))
+dependsOn: {'compileHello'},
+runCondition: RunOnChanges(inputs: file('hello.o'), outputs: file('hello'
+)
+)
+)
 ```
 
-Notice that this task only needs to declare outputs, because it already depends on other tasks which declare their own
-inputs.
-
 The `link` task will run whenever any of the tasks it depends on (`compileHello` in this case) runs,
-so in a way, it _inherits_ its dependencies' inputs.
+and of course, if any of its own inputs/outputs change.
 
 The `main` function now looks like this:
 
@@ -240,11 +251,12 @@ main(List<String> args) => run(args, tasks: {
       Task(compileHello,
           runCondition: RunOnChanges(
             inputs: file('hello.c'),
-            outputs: file('hello.o'),
-          )),
+            outputs: file('hello.o'))),
       Task(link,
           dependsOn: {'compileHello'},
-          runCondition: RunOnChanges(outputs: file('hello'))),
+          runCondition: RunOnChanges(
+              inputs: file('hello.o'),
+              outputs: file('hello'))),
     });
 ```
 
@@ -267,10 +279,11 @@ Hello, World!
 We could keep declaring source files and their corresponding object files manually, but as a project grows,
 that can become difficult to manage.
 
-Let's do something better. We can still list the C source files explicitly in the build file, so that it's clear to
+We can do something better... we may still want to list the C source files explicitly in the build file, so that it's
+clear to
 everyone what is expected to be compiled (though as shown in the [Introduction](index.html),
 it's very easy to obtain every source file in a directory).
-But the output files should be computed from the sources to avoid mistakes.
+But the output files should probably be computed from the sources to avoid mistakes.
 
 This can be done quite elegantly in Dart:
 
@@ -283,7 +296,7 @@ const sourceFiles = [
   'greeting.h',
 ];
 
-final outputs = [
+final compileOutputs = [
   for (final source in sourceFiles)
     if (paths.extension(source) == '.c') paths.setExtension(source, '.o')
 ];
@@ -296,21 +309,23 @@ main(List<String> args) => run(args, tasks: {
       Task(compile,
           runCondition: RunOnChanges(
             inputs: files(sourceFiles),
-            outputs: files(outputs),
+            outputs: files(compileOutputs),
           )),
       Task(link,
           dependsOn: {'compile'},
-          runCondition: RunOnChanges(outputs: file('hello'))),
+          runCondition: RunOnChanges(
+            inputs: files(compileOutputs), 
+            outputs: file('hello'))),
     });
 
 Future<void> compile(_) =>
     execProc(Process.start('gcc', ['-c', ...sourceFiles]));
 
 Future<void> link(_) =>
-    execProc(Process.start('gcc', ['-o', 'hello', ...outputs]));
+    execProc(Process.start('gcc', ['-o', 'hello', ...compileOutputs]));
 ```
 
-For completeness, here's the extra source files:
+For completeness, here are the extra source files:
 
 `hello.c`
 
@@ -366,17 +381,22 @@ An incremental build is one where after an initial build is completed, further b
 that only work that is strictly necessary, given the changes, is performed.
 
 Naively, one may think that, continuing with C compilation as an example, we would need to re-compile a C file
-only if it or its corresponding object file had been modified since the last compilation. But in many languages,
+only if it, or its corresponding object file, had been modified since the last compilation. But in many languages,
 including C, a file may _include_ other files.
 
-If a file A is included by another file B, and A changes, both A and B must be re-compiled. That's because B may be using
-things from A that were removed or altered in an incompatible way.
+If a file A is included by another file B, and A changes, both A and B must be re-compiled. That's because B may be
+using
+things from A that were removed or altered in an incompatible way. In other words: when a file is modified, it must be
+re-compiled along with all other files that depend on it.
 
-**Hence, to make a build incremental, one needs to know not just what has changed, but also which files depend on which files.**
+**Hence, to make a build incremental, one needs to know not just what has changed, but also which files depend on which
+files.**
 
-But how can one know which files depends on which other files? The answer depends on the programming language being used.
+But how can one know which files depends on which other files? The answer depends on the programming language being
+used.
 
-With the `gcc` C compiler, it's possible to find that out by [using the -MMD flag](https://www.evanjones.ca/makefile-dependencies.html)
+With the `gcc` (and `clang`) C compiler, it's possible to find that out
+by [using the -MMD flag](https://www.evanjones.ca/makefile-dependencies.html)
 to generate a `.d` file listing the dependencies of each compiled file.
 
 For example, using the same files from the previous section:
@@ -388,17 +408,24 @@ $ cat hello.d
 hello.o: hello.c greeting.h
 ```
 
-The compiler invocation above compiled an object file, `hello.o`, from the `hello.c` source, as well as a `hello.d` file which shows all the
-dependencies of `hello.o` (using `Makefile` syntax, as it was designed to work with Make).
+The compiler invocation above compiled an object file, `hello.o`, from the `hello.c` source, as well as a `hello.d` file
+which shows all the
+dependencies of `hello.o` (using `Makefile` syntax, as it was designed to work with Make). In this example, we can see
+that `hello.o` _depends on_ `hello.c` and `greeting.h`.
 
-To know which files have changed since the last compilation, Dartle allows `Task` functions to take a second argument,
+> I assume that `.o` files always depend first on the `.c` file it was compiled from, and that the next dependencies
+> listed are the actual `.c` file's dependencies. In this example, that would mean `hello.c` _depends on_ `greeting.h`,
+> which is correct.
+
+A Dartle Task that needs to know which files have changed since the last compilation can take a second argument,
 as shown below:
 
 ```dart
 Future<void> compile(List<String> args, [ChangeSet? changeSet]) { ... }
 ```
 
-The first time the task runs, or after a clean build, the `changeSet` parameter will be null, otherwise it will contain
+The first time the task runs, or after a clean build, the `changeSet` parameter will be `null`, otherwise it will
+contain
 `inputChanges` and `outputChanges` which can be inspected by the task to know what work it needs to perform.
 
 This is all we need to know to write a fully incremental C (or any other language) build system!
@@ -407,56 +434,76 @@ Here's what the `compile` Task function would look like, accounting for incremen
 
 ```dart
 Future<int> compile(List<String> args, [ChangeSet? changeSet]) async {
-  var sources = sourceFiles;
+  Iterable<String> sources = sourceFiles;
   if (changeSet != null) {
-    sources = <String>{};
-    var missingDependenciesFile = false;
-    final deletedFiles = changeSet.inputChanges
-        .where((f) => f.kind == ChangeKind.deleted)
-        .map((f) => f.entity.path)
-        .toSet();
-    for (final change in changeSet.inputChanges) {
-      switch (change.kind) {
-        case ChangeKind.modified:
-        case ChangeKind.added:
-          missingDependenciesFile |= await addWithDependentsTo(
-              sources, change.entity.path, deletedFiles);
-          break;
-        case ChangeKind.deleted:
-          ignoreExceptions(() async =>
-          await File(paths.setExtension(change.entity.path, '.o'))
-              .delete());
+    if (changeSet.outputChanges.isEmpty) {
+      final incrementalSources =
+      (await computeFilesToCompile(changeSet).toSet())
+          .where((e) => e.endsWith('.c'));
+      if (incrementalSources.isNotEmpty) {
+        sources = incrementalSources;
+        logger.fine(() => 'Compiling incrementally: $sources');
       }
-      if (missingDependenciesFile) {
-        // cannot continue with incremental compilation
-        sources = sourceFiles;
-        break;
-      }
+    } else {
+      logger.info(
+              () => 'Cannot perform incremental compilation as outputs changed');
     }
-    for (final change in changeSet.outputChanges) {
-      final source = paths.setExtension(change.entity.path, '.c');
-      if (sourceFiles.contains(source)) {
-        await addWithDependentsTo(sources, source, deletedFiles);
-      }
-    }
-    logger.fine(() => 'Compiling incrementally: $sources');
   }
-  return await execProc(Process.start('gcc', ['-MMD', '-c', ...sources]));
+  return await execProc(Process.start(
+      'gcc', ['-MMD', '-c', ...sources.where((p) => p.endsWith('.c'))]));
 }
 ```
 
+> This example performs a full compilation if there's any output changes because handling that correctly can be
+> difficult.
+> Also, the main purpose of an incremental task is to handle the much more common case where only inputs are changed.
+
+The `computeFilesToCompile` function is where the bulk of the logic is implemented:
+
+```dart
+Stream<String> computeFilesToCompile(ChangeSet changeSet) async* {
+  // collect the deleted files to avoid trying to re-compile any
+  final deletedFiles = changeSet.inputChanges
+      .where((f) => f.kind == ChangeKind.deleted)
+      .map((f) => f.entity.path)
+      .toSet();
+
+  final dependencyTree = await _readDependencyTree(
+      compileOutputs.where((p) => p.endsWith('.d')), deletedFiles);
+
+  for (final change in changeSet.inputChanges) {
+    switch (change.kind) {
+      case ChangeKind.modified || ChangeKind.added:
+        yield change.entity.path;
+        for (final dep in _dependents(change.entity.path, dependencyTree)) {
+          yield dep;
+        }
+        break;
+      case ChangeKind.deleted:
+        // must delete the output file from all deleted sources
+        await ignoreExceptions(() async =>
+            await File(paths.setExtension(change.entity.path, '.o')).delete());
+    }
+  }
+}
+```
+
+> A few helper functions are omitted from the code above for brevity. They're not particularly complex,
+> but aren't very relevant to this section.
+> For the curious, you can find my
+> full [implementation here](https://github.com/renatoathaydes/dartle_c/blob/main/lib/src/compile.dart).
+
 It's become a fairly sophisticated task function now!
 
-And for this very reason, it would be nice to keep "implementation details" like this out of the build file.
-
-To do that is easy, by using `dartle-src/`, as explained in the next section.
+And for this very reason, it would be nice to keep "implementation details" like this out of the build file,
+as will be shown in the next section.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Extracting complex logic into dartle-src/" }}
 
 Complex tasks should not be written directly in the build script, as they can make it hard to understand what the build
-is supposed to do with too many details.
+is supposed to do by including too many details.
 
 The simplest way to extract functionality out of the build script is to create separate Dart files in the `dartle-src/`
 directory.
@@ -474,10 +521,10 @@ import 'dart:io';
 import 'package:path/path.dart' as paths;
 
 Future<void> link(_) => execProc(Process.start('gcc',
-    ['-o', 'hello', ...outputs.where((f) => paths.extension(f) == '.o')]));
+    ['-o', 'hello', ...compileOutputs.where((f) => paths.extension(f) == '.o')]));
 ```
 
-For this to compile, it needs access to `outputs`, which was in the `dartle.dart` script.
+For this to compile, it needs access to `compileOutputs`, which was in the `dartle.dart` script.
 
 This is a common problem when splitting up build files. The easy solution is to create a file for _configuration_ that
 can be imported by any other files.
@@ -493,7 +540,7 @@ const sourceFiles = {
   'greeting.h',
 };
 
-final outputs = [
+final compileOutputs = [
   for (final source in sourceFiles)
     if (paths.extension(source) == '.c') ...[
       paths.setExtension(source, '.o'),
@@ -512,7 +559,7 @@ import 'package:path/path.dart' as paths;
 import 'config.dart';
 
 Future<void> link(_) => execProc(Process.start('gcc',
-    ['-o', 'hello', ...outputs.where((f) => paths.extension(f) == '.o')]));
+    ['-o', 'hello', ...compileOutputs.where((f) => paths.extension(f) == '.o')]));
 ```
 
 The `compile` task function (along with its helper functions) can also be moved into its own file, `dartle-src/compile.dart`...
@@ -530,11 +577,13 @@ main(List<String> args) => run(args, tasks: {
       Task(compile,
           runCondition: RunOnChanges(
             inputs: files(sourceFiles),
-            outputs: files(outputs),
+            outputs: files(compileOutputs),
           )),
       Task(link,
           dependsOn: {'compile'},
-          runCondition: RunOnChanges(outputs: file('hello'))),
+          runCondition: RunOnChanges(
+              inputs: files(compileOutputs), 
+              outputs: file('hello'))),
     });
 ```
 
@@ -571,7 +620,7 @@ $ dartle clean
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Default Tasks" }}
 
-One last thing a Dartle build should have is a default task. That makes it just a tiny bit easier to run the most
+A very convenient thing to add to a Dartle build is a default task. That makes it just a tiny bit easier to run the most
 common build tasks, as instead of having to specify the task(s) that need to be run, you can type `dartle` and be
 done with it!
 
@@ -587,11 +636,12 @@ import 'dartle-src/link.dart';
 final compileTask = Task(compile,
     runCondition: RunOnChanges(
       inputs: files(sourceFiles),
-      outputs: files(outputs),
+      outputs: files(compileOutputs),
     ));
 
 final linkTask = Task(link,
-    dependsOn: {'compile'}, runCondition: RunOnChanges(outputs: file('hello')));
+    dependsOn: {'compile'}, runCondition: RunOnChanges(inputs: files(compileOutputs),
+        outputs: file('hello')));
 
 main(List<String> args) => run(args, tasks: {
       compileTask,
@@ -606,7 +656,7 @@ main(List<String> args) => run(args, tasks: {
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Profiling a build" }}
 
-Finally, make sure you understand your build performance by running the build with the `-l profile` options:
+Finally, make sure you understand your build performance by running the build with the `-l profile` option:
 
 ```shell
 $ dartle -l profile
@@ -632,7 +682,16 @@ $ dartle -l profile
 
 <hr>
 
-With this, we come to the end of the Dartle Overview armed with a fully incremental C compiler!
+With this, we come to the end of the Dartle Overview armed with a fully incremental C build system!
+
+While you could use this to write your own build system, if you actually want a C build system, I turned the examples
+in this page into the [Dartle_C](https://github.com/renatoathaydes/dartle_c) Dartle extension.
+
+If you like Dartle and want to learn more, try some of these pages next:
+
+* [Dartle CLI](cli.html)
+* [Dartle as a Dart library](dartle-derived-build-tool.html)
+* [Tasks](tasks.html)
 
 {{end}}
 {{ include /processed/fragments/_footer.html }}
