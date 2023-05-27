@@ -607,6 +607,8 @@ To do that, use the `createCleanTask` function:
 createCleanTask(tasks: [compileTask, linkTask])
 ```
 
+> For more useful functions, see also [Helper Functions](reference/helper-functions.html). 
+
 And run it with:
 
 ```shell
@@ -692,6 +694,7 @@ If you like Dartle and want to learn more, try some of these pages next:
 * [Dartle CLI](cli.html)
 * [Dartle as a Dart library](dartle-derived-build-tool.html)
 * [Tasks](tasks.html)
+* [Helper Functions](reference/helper-functions.html)
 
 {{end}}
 {{ include /processed/fragments/_footer.html }}

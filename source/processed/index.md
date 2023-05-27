@@ -175,6 +175,8 @@ To find out more, check some of the pages below:
 * [Getting Started](getting-started.html)
 * [Dartle Overview](dartle-overview.html)
 * [Writing Dartle Tasks](tasks.html)
+* [Helper Functions](reference/helper-functions.html)
+
 {{end}}
 
 I hope you enjoy using Dartle.

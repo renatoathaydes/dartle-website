@@ -95,7 +95,7 @@ Tasks that accept arguments (by default, a task does not accept any arguments, s
 as shown above) can be invoked with arguments by prepending task arguments with `:`, as shown below:
 
 ```shell
-dartle hello :Joe :Mary
+$ dartle hello :Joe :Mary
 2023-05-26 21:23:46.582896 - dartle[main 76494] - INFO - Executing 1 task out of a total of 1 task: 1 task selected, -2 dependencies
 2023-05-26 21:23:46.583053 - dartle[main 76494] - INFO - Running task 'hello'
 Hello Joe, Mary!
@@ -245,6 +245,83 @@ Dartle automatically checks if a Task's inputs and outputs overlap with that of 
 explicit dependencies between them are declared if an overlap is found.
 This avoids a common mistake where dependencies are not correctly declared, causing a Task to overwrite another
 Tasks' inputs or outputs.
+
+{{end}}
+{{component /processed/fragments/_section.html}}
+{{ define sectionTitle "Task Isolation" }}
+
+Tasks are likely to run in their own Dart [Isolate](https://dart.dev/language/concurrency#how-isolates-work). Whether
+they will, depends on CLI options, number of tasks running, and the environment (number of CPUs available).
+
+> Dart Isolates allow full parallelization of tasks, as well as isolation. To turn off Isolates,
+> use the `--no-parallel-tasks` when running a build.
+
+For this reason, a Task must not make assumptions about its global environment. It would be a mistake,
+for example, to use global variables to _communicate_ between different tasks. Global variables are not
+propagated to different Isolates.
+
+The only safe way to communicate between tasks is by using the file system and ensuring dependencies
+between tasks are set up appropriately, so it's safe to assume a task runs before or after another.
+
+Another limitation caused by Isolates is that not every Dart Object can be _sent_ to another Isolate,
+hence if a Task's action contains state (which is possible because a Dart Function can be a stateful Object),
+non-sendable state must be initialized lazily, when the action is executed. Trying to create a Task action
+as shown below, for example, is likely to cause errors:
+
+```dart
+class StatefulAction {
+  final Future<int> _exitCode;
+
+  StatefulAction(String command, List<String> args):
+        _exitCode = exec(Process.start(command, args, runInShell: true));
+
+  Future<void> call(_)async {
+    if (await _exitCode != 0) {
+      failBuild(reason: 'process failed');
+    }
+  }
+}
+
+final statefulTask = Task(StatefulAction('ls', ['-a']), name: 'ls');
+```
+
+Running this task by itself may actually work fine! But when Dartle decides it should parallelize tasks,
+this would fail:
+
+```shell
+Unhandled exception:
+Invalid argument(s): Illegal argument in isolate message: object is unsendable - Library:'dart:async' Class: _Future@4048458 (see restrictions listed at `SendPort.send()` documentation for more information)
+ <- Instance of 'StatefulAction' (from file:///programming/projects/dartle/temp-test/dartle.dart)
+ <- Context num_variables: 1
+ <- Closure: (dynamic) => Future<void> from Function 'call':. (from dart:core)
+ <- Context num_variables: 5
+ <- Closure: (_ActorMessage) => Future<void> (from dart:core)
+ <- Instance of '_HandlerOfFunction<_ActorMessage, dynamic>' (from package:actors/src/actors_base.dart)
+ <- Instance of '_BoostrapData<_ActorMessage, dynamic>' (from package:actors/src/actors_base.dart)
+ <- Instance of 'Message' (from package:actors/src/message.dart)
+```
+
+To fix this problem, make sure to only initialize state that is _sendable_ in a Task action:
+
+```dart
+class StatefulAction {
+  final String command;
+  final List<String> args;
+
+  const StatefulAction(this.command, this.args);
+
+  Future<void> call(_) async {
+    final exitCode = await exec(Process.start(command, args, runInShell: true));
+    if (exitCode != 0) {
+      failBuild(reason: 'process failed');
+    }
+  }
+}
+
+final statefulTask = Task(StatefulAction('ls', ['-a']), name: 'ls');
+```
+
+The above Task is always safe to run in parallel.
 
 {{end}}
 {{end}}
