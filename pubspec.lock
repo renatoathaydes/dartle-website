@@ -61,18 +61,10 @@ packages:
     dependency: "direct dev"
     description:
       name: dartle
-      sha256: "234762b1c493fbc2dae8b4b7a854bc0bc629315c87efdea71f5fe8099a886d45"
+      sha256: bd49043eefd0f9072698e1f611f9165f638bc14c8e019b3f51a15242cc216991
       url: "https://pub.dev"
     source: hosted
-    version: "0.23.0"
-  freezed_annotation:
-    dependency: transitive
-    description:
-      name: freezed_annotation
-      sha256: aeac15850ef1b38ee368d4c53ba9a847e900bb2c53a4db3f6881cbb3cb684338
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.0"
+    version: "0.24.0"
   io:
     dependency: transitive
     description:
@@ -81,14 +73,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
-  json_annotation:
-    dependency: transitive
-    description:
-      name: json_annotation
-      sha256: b10a7b2ff83d83c777edba3c6a0f97045ddadd56c944e1a23a3fdf43a1bf4467
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.8.1"
   logging:
     dependency: transitive
     description:
