@@ -49,9 +49,12 @@ Would you like to create one [y/N]? y
 ```
 
 > Dartle logs using the pattern `${date} - ${loggerName}[${isolateName} ${PID}] - ${LEVEL} ${MESSAGE}`.
+> 
 > While the loggerName is `dartle` when running Dartle directly, build tools that use Dartle as a library may
-> add their own loggers. The `isolateName` may also be important as each task runs on a different `Isolate` by
-> default, and the PID (process ID) helps understand when different processes are spawned to run different processes.
+> add their own loggers. The `isolateName` may also be important as tasks may run on different `Isolate`s by
+> default, and the PID (process ID) helps understand when different processes are being spawned.
+> Log levels are used to enable more or less output, e.g. use `-l debug` to enable debug messages
+> (see [Dartle CLI](cli.html) for details).
 
 The initial project layout looks as shown below:
 
