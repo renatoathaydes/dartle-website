@@ -48,6 +48,11 @@ Would you like to create one [y/N]? y
 ✔ Build succeeded in 6 ms
 ```
 
+> Dartle logs using the pattern `${date} - ${loggerName}[${isolateName} ${PID}] - ${LEVEL} ${MESSAGE}`.
+> While the loggerName is `dartle` when running Dartle directly, build tools that use Dartle as a library may
+> add their own loggers. The `isolateName` may also be important as each task runs on a different `Isolate` by
+> default, and the PID (process ID) helps understand when different processes are spawned to run different processes.
+
 The initial project layout looks as shown below:
 
 ```shell
