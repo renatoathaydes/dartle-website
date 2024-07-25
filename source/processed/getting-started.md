@@ -9,6 +9,10 @@
 
 The recommended way to install Dartle is via [dart pub](https://dart.dev/tools/pub/cmd).
 
+> If for whatever reason, you cannot use `dart pub`, download a pre-built binary from
+> the [Github Releases](https://github.com/renatoathaydes/dartle/releases) page.
+> You still need to have Dart installed to run the Dartle scripts, though.
+
 If you do not have Dart installed, you'll need to [install it first](https://dart.dev/get-dart).
 
 Make sure to [add the Pub Cache](https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path)

@@ -234,11 +234,8 @@ And the `Task` itself:
 
 ```dart
 Task(link,
-dependsOn: {'compileHello'},
-runCondition: RunOnChanges(inputs: file('hello.o'), outputs: file('hello'
-)
-)
-)
+    dependsOn: {'compileHello'},
+    runCondition: RunOnChanges(inputs: file('hello.o'), outputs: file('hello')))
 ```
 
 The `link` task will run whenever any of the tasks it depends on (`compileHello` in this case) runs,
