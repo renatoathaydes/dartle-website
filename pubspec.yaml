@@ -8,4 +8,4 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dev_dependencies:
-  dartle: ^0.24.0
+  dartle: ^0.28.1

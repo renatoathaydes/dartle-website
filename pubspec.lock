@@ -5,10 +5,10 @@ packages:
     dependency: transitive
     description:
       name: actors
-      sha256: "056a75ad5b1fc9edc166dcf311e9a8b500d46f11cd0888749e611ae3ec0bcfd3"
+      sha256: cd382bde6457d84bc176559b6fce578ebb7b3469604bfa8304802ba219d94384
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.4"
+    version: "0.11.0"
   args:
     dependency: transitive
     description:
@@ -61,10 +61,10 @@ packages:
     dependency: "direct dev"
     description:
       name: dartle
-      sha256: bd49043eefd0f9072698e1f611f9165f638bc14c8e019b3f51a15242cc216991
+      sha256: beec49f23299a93cd6d7e0fff2e0f5c2f2ef5a94d019707c6ae68745d91ac060
       url: "https://pub.dev"
     source: hosted
-    version: "0.24.0"
+    version: "0.28.1"
   io:
     dependency: transitive
     description:
@@ -125,10 +125,10 @@ packages:
     dependency: transitive
     description:
       name: tar
-      sha256: "85ffd53e277f2bac8afa2885e6b195e26937e9c402424c3d88d92fd920b56de9"
+      sha256: "8e67ab1baa07d3ef2c5d52cfb84e7ed4742799141e9e2ac3d0801a1a7ccb7575"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.6"
+    version: "2.0.0"
   term_glyph:
     dependency: transitive
     description:
@@ -162,4 +162,4 @@ packages:
     source: hosted
     version: "3.1.2"
 sdks:
-  dart: ">=3.0.0 <4.0.0"
+  dart: ">=3.3.0 <4.0.0"
