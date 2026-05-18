@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:dartle/dartle.dart';
 import 'package:path/path.dart' as paths;
 
+const magnanimousVersion = '0.12';
+
 String userHome() => homeDir() ?? failBuild(reason: 'Cannot find user HOME');
 
 final magFile = File(paths.join(userHome(), '.magnanimous', 'mag'));
@@ -40,7 +42,7 @@ Future<void> downloadMagnanimous(_) async {
   await magFile.parent.create();
   final magStream = download(
       Uri.parse('https://github.com/renatoathaydes/magnanimous/releases'
-          '/download/0.11.1/magnanimous-${_osArch()}'));
+          '/download/$magnanimousVersion/magnanimous-${_osArch()}'));
   await magFile.writeBinary(magStream, makeExecutable: true);
 }
 
