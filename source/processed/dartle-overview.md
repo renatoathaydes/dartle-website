@@ -4,20 +4,35 @@
 {{component /processed/fragments/_main.html}}\
 {{define mainTitle "Dartle Documentation"}}\
 
+## Dartle Overview
+
+This document gives an overview of Dartle by going from a minimal Hello World project using a Dartle script,
+to a fully incremental C build system.
+
+## Table of Contents
+
+- [Hello Dartle](#hello-dartle)
+  - [Using the dartle tool](#using-the-dartle-tool)
+  - [Compiling to binary](#compiling-to-binary)
+  - [Debugging with `dart run`](#debugging-with-dart)
+- [A use case: compiling C code](#compiling-c-code)
+  - [Task inputs/outputs](#task-inputs-outputs)
+  - [Task dependencies](#task-dependencies)
+  - [Computing task inputs/outputs](#computing-task-inputs-outputs)
+  - [Making a task incremental](#making-a-task-incremental)
+  - [Extracting complex logic into dartle-src/](#extracting-complex-logic)
+  - [Clean builds](#clean-builds)
+  - [Default tasks](#default-tasks)
+  - [Profiling a build](#profiling-a-build)
+  - [Conclusion](#conclusion)
+
 {{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Dartle Overview" }}
+{{ define sectionTitle "Hello Dartle" }}
+{{ define sectionId "hello-dartle" }}
 
-The basic way to use Dartle is by writing a `dartle.dart` script which drives the build.
+A Dartle build is normally driven by a `dartle.dart` script.
 
-> When using Dartle as a library, you'll also need to create Tasks and configure them, so this section is useful for that too.
-
-We'll see a few options for how to run `dartle.dart` soon. But first, let's look at the mechanics of a Dartle script.
-
-### Hello Dartle
-
-The basic unit of a Dartle build is a `Task`.
-
-To create a task is very easy. The following `dartle.dart` script shows the most basic, Hello World Dartle build:
+A _Hello World_ Dartle script looks like this:
 
 ```dart
 import 'package:dartle/dartle.dart';
@@ -26,6 +41,69 @@ main(List<String> args) => run(args, tasks: {Task(hello)});
 
 hello(_) => print('Hello Dartle');
 ```
+
+<div id="using-the-dartle-tool"></div>
+### Using the dartle tool
+
+To run that, you can use the `dartle` command (see [Getting Started](getting-started.html) for installation instructions):
+
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle
+2026-05-17 16:02:50.499739 - dartle[main 64339] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
+2026-05-17 16:02:52.036706 - dartle[main 64339] - INFO - Re-compiled dartle.dart in 1.531 seconds
+<span style="color:#a50">2026-05-17 16:02:52.472183 - dartle[main 64347] - WARN - No tasks were requested and no default tasks exist.</span>
+<span style="color:#0a0">✔ Build succeeded in 383μs</span>
+</pre>
+
+As you can see, `dartle` automatically compiles the script if before running it (and the next time it runs, it re-uses the compiled version if it's not changed, making the script much faster to run).
+
+Without defining a [default task](#default-tasks), Dartle does not know what to run, so in this case, we need to call the task defined by the build, `hello`:
+
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle hello
+2026-05-17 16:03:09.221521 - dartle[main 64366] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-17 16:03:09.221565 - dartle[main 64366] - INFO - Running task &#39;<span style="font-weight:bold">hello</span>&#39;
+Hello Dartle
+<span style="color:#0a0">✔ Build succeeded in 282μs</span>
+</pre>
+
+<div id="compiling-to-binary"></div>
+### Compiling to binary
+
+It's also possible to compile the `dartle.dart` file to a small binary and then execute that instead:
+
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dart compile exe dartle.dart
+Generated: &#47;Users&#47;renatoathaydes&#47;programming&#47;projects&#47;dartle-website&#47;examples&#47;hello-world&#47;dartle.exe
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> .&#47;dartle.exe hello
+2026-05-17 16:07:59.773680 - dartle[main 64770] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-17 16:07:59.773755 - dartle[main 64770] - INFO - Running task &#39;<span style="font-weight:bold">hello</span>&#39;
+Hello Dartle
+<span style="color:#0a0">✔ Build succeeded in 508μs</span>
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> time .&#47;dartle.exe hello
+2026-05-17 16:08:03.537027 - dartle[main 64787] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-17 16:08:03.537114 - dartle[main 64787] - INFO - Running task &#39;<span style="font-weight:bold">hello</span>&#39;
+Hello Dartle
+<span style="color:#0a0">✔ Build succeeded in 458μs</span>
+.&#47;dartle.exe hello  0.01s user 0.01s system 66% cpu 0.037 total
+</pre>
+
+<div id="debugging-with-dart"></div>
+### Debugging with `dart run`
+
+Finally, it's also possible to run the `dartle.dart` script as any other Dart application:
+
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> time dart run dartle.dart hello
+2026-05-17 16:25:35.703471 - dartle[main 66001] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-17 16:25:35.709899 - dartle[main 66001] - INFO - Running task &#39;<span style="font-weight:bold">hello</span>&#39;
+Hello Dartle
+<span style="color:#0a0">✔ Build succeeded in 35ms, 483μs</span>
+dart run dartle.dart hello  0.80s user 0.10s system 129% cpu 0.691 total
+</pre>
+
+The problem with that is that it's noticeably slower than using `dartle` or compiling to a binary. On the other hand,
+it allows debugging the script more easily using the excellent [Dart Dev Tools](https://dart.dev/tools/dart-devtools).
 
 Things to notice:
 
@@ -38,92 +116,17 @@ Things to notice:
 > Task functions may also take a second argument for incremental compilation, as we'll see below.
 > For reference about Tasks, visit the [Dartle Tasks](tasks.html) page.
 
-The `hello` function shown above uses a very lightweight syntax, allowed by Dart's dynamic typing features
-(no return type or argument type declared) that can be used to keep scripts simple. But if you prefer, you can declare
-the types:
-
-```dart
-Future<void> hello(List<String> args) => print('Hello Dartle');
-```
-
-Dartle cannot distinguish between the two versions, so feel free to use whatever you prefer.
-
 {{end}}
 {{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Running a build" }}
-
-There are a few ways to run a Dartle build.
-
-Let's start by using `dart` to run it directly, given that a Dartle script is also a _normal_ Dart script.
-
-We need to tell Dartle which task to run because there's no default task defined yet, so to run the `hello` task
-we run `dart dartle.dart hello`:
-
-```shell
-$ dart dartle.dart hello
-2023-05-06 20:11:56.548602 - dartle[main 25414] - INFO - Executing 1 task out of a total of 1 task: 1 task selected
-2023-05-06 20:11:56.566190 - dartle[main 25414] - INFO - Running task 'hello'
-Hello Dartle
-✔ Build succeeded in 92 ms
-```
-
-This is the easiest way to do it, but it's not very fast because of Dart's startup time not being so great
-(Dartle's own observed time was `92ms`, but the actual process takes around 1 full second to run on my Macbook Air,
-which is annoying for a command you may want to run very often).
-
-For that reason, Dartle can be installed as an utility that manages the compilation of Dartle scripts so that when you
-need to run a build, it starts up much faster (unless the script needs to be recompiled).
-
-To activate `dartle`, run the following command:
-
-```shell
-$ dart pub global activate dartle
-```
-
-Now, you should be able to run the build as follows:
-
-```shell
-$ dartle hello
-2023-05-06 20:26:50.972945 - dartle[main 25903] - INFO - Executing 1 task out of a total of 1 task: 1 task selected
-2023-05-06 20:26:50.973047 - dartle[main 25903] - INFO - Running task 'hello'
-Hello Dartle
-✔ Build succeeded in 0 ms
-```
-
-> If you get an error, make sure that `~/.pub-cache/bin` is on your `PATH`.
-
-This time, wall time was around 250ms on my machine. It's not instant, but feels quite fast.
-
-Using this approach, Dartle will automatically re-compile the script when needed, and if you add a default task
-to the build, you can just type `dartle` to run it, which is highly convenient.
-
-Finally, to make it run **really** fast, you may want to compile it directly to a native binary as follows:
-
-```shell
-$ dart compile exe dartle.dart
-Info: Compiling with sound null safety.
-Generated: /Users/renato/programming/projects/dartle-website/hello/dartle.exe
-```
-
-Now, running `./dartle.exe hello` runs in just `0.050 seconds`, which really feels instant!
-
-Users who find it really important to have this sort of speed gain may find it worthwhile to use this approach
-(but notice that for most builds, actual tasks may take a lot longer to run, so the benefit of an instant startup
-may not materialize in real gains).
-
-Tools that [use Dartle as a library](dartle-derived-build-tool.html) will also benefit from this approach, normally.
-
-{{end}}
-{{component /processed/fragments/_section.html}}
+{{ define sectionId "compiling-c-code" }}
 {{ define sectionTitle "A use case: compiling C code" }}
 
 In order to go through most Dartle features, the following sections will introduce each feature in the context of
 creating a C build tool, starting from a simple task that compiles a single file, and ending with a fully incremental
 build which can automatically determine dependencies between files, recompiling them only as necessary.
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Task inputs/outputs" }}
+<div id="task-inputs-outputs"></div>
+### Task inputs/outputs
 
 To really benefit from Dartle, you need to tell it what the inputs/outputs of your tasks are, otherwise it has no way
 of knowing when it can skip running a Task.
@@ -184,14 +187,14 @@ the exit code of the Process.
 
 Running `dartle compile` to execute the above script should result in something like this:
 
-```shell
-$ dartle compile
-2023-05-06 21:03:08.928448 - dartle[main 26492] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
-2023-05-06 21:03:14.920246 - dartle[main 26492] - INFO - Re-compiled dartle.dart in 5.982 seconds
-2023-05-06 21:03:16.182709 - dartle[main 26502] - INFO - Executing 1 task out of a total of 1 task: 1 task selected
-2023-05-06 21:03:16.182831 - dartle[main 26502] - INFO - Running task 'compileHello'
-✔ Build succeeded in 706 ms
-```
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle compile
+2026-05-17 17:07:10.820116 - dartle[main 68088] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
+2026-05-17 17:07:17.939838 - dartle[main 68088] - INFO - Re-compiled dartle.dart in 7s, 115ms
+2026-05-17 17:07:18.300476 - dartle[main 68095] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-17 17:07:18.300556 - dartle[main 68095] - INFO - Running task &#39;<span style="font-weight:bold">compileHello</span>&#39;
+<span style="color:#0a0">✔ Build succeeded in 77ms, 680μs</span>
+</pre>
 
 > Dartle will _guess_ the task you want to run if you type only the first few letters of the task name, and the
 > name is not ambiguous. Uppercase letters are treated as if starting new words, which can be handy to disambiguate
@@ -201,20 +204,19 @@ If everything worked, there should now be a file called `hello.o` next to `hello
 
 Running the build again should result in no Tasks actually running, as everything is up-to-date.
 
-```shell
-$ dartle compile
-Everything is up-to-date!
-✔ Build succeeded in 3 ms
-```
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle compile
+<span style="color:#0a0">Everything is up-to-date!</span>
+<span style="color:#0a0">✔ Build succeeded in 897μs</span>
+</pre>
 
 If the object file is deleted, or the C file modified, Dartle will re-run the task.
 
 > It's very important to define the Task's inputs/outputs accurately, otherwise work that should be performed will be wrongly
 > skipped, or the opposite, unnecessary work will be performed too often!
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Task dependencies" }}
+<div id="task-dependencies"></div>
+### Task dependencies
 
 Another very important concept in Dartle is that of dependencies between tasks. If a task depends on another, it will
 run AFTER the other task has been executed successfully. That also means that the inputs of a task are also inputs
@@ -259,19 +261,21 @@ main(List<String> args) => run(args, tasks: {
 
 Running `dartle link` should produce a file called `hello` which can be executed immediately:
 
-```shell
-$ dartle link
-2023-05-06 21:36:29.098988 - dartle[main 27775] - INFO - Executing 1 task out of a total of 2 tasks: 1 task selected, 1 dependency, 1 up-to-date
-2023-05-06 21:36:29.099146 - dartle[main 27775] - INFO - Running task 'link'
-✔ Build succeeded in 102 ms
-
-$ ./hello
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">)</span><span style="color:#a50;font-weight:bold">✗</span> dartle link
+2026-05-18 20:22:38.843244 - dartle[main 28465] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
+2026-05-18 20:22:40.525836 - dartle[main 28465] - INFO - Re-compiled dartle.dart in 1.677 seconds
+2026-05-18 20:22:40.937040 - dartle[main 28472] - INFO - Executing<span style="font-weight:bold">2 tasks</span> out of a total of 2 tasks: 1 task selected, 1 dependency
+2026-05-18 20:22:40.937121 - dartle[main 28472] - INFO - Running task &#39;<span style="font-weight:bold">compileHello</span>&#39;
+2026-05-18 20:22:41.214675 - dartle[main 28472] - INFO - Running task &#39;<span style="font-weight:bold">link</span>&#39;
+<span style="color:#0a0">✔ Build succeeded in 445ms, 133μs</span>
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">)</span><span style="color:#a50;font-weight:bold">✗</span> .&#47;hello
 Hello, World!
-```
+</pre>
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Computing Task inputs/outputs" }}
+
+<div id="computing-task-inputs-outputs"></div>
+### Computing Task inputs/outputs
 
 We could keep declaring source files and their corresponding object files manually, but as a project grows,
 that can become difficult to manage.
@@ -354,25 +358,23 @@ char* greeting(void) {
 
 Finally, we can run the build again:
 
-```shell
-$ dartle link
-2023-05-06 23:24:12.977305 - dartle[main 29683] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
-2023-05-06 23:24:19.007166 - dartle[main 29683] - INFO - Re-compiled dartle.dart in 6.019 seconds
-2023-05-06 23:24:22.702044 - dartle[main 29692] - INFO - Executing 2 tasks out of a total of 2 tasks: 1 task selected, 1 dependency
-2023-05-06 23:24:22.702189 - dartle[main 29692] - INFO - Running task 'compile'
-2023-05-06 23:24:22.868822 - dartle[main 29692] - INFO - Running task 'link'
-✔ Build succeeded in 275 ms
-
-$ ./hello
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">)</span><span style="color:#a50;font-weight:bold">✗</span> dartle link
+2026-05-18 20:31:13.846446 - dartle[main 29376] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
+2026-05-18 20:31:18.664887 - dartle[main 29376] - INFO - Re-compiled dartle.dart in 4.813 seconds
+2026-05-18 20:31:19.072456 - dartle[main 29383] - INFO - Executing<span style="font-weight:bold">2 tasks</span> out of a total of 2 tasks: 1 task selected, 1 dependency
+2026-05-18 20:31:19.072529 - dartle[main 29383] - INFO - Running task &#39;<span style="font-weight:bold">compile</span>&#39;
+2026-05-18 20:31:19.151584 - dartle[main 29383] - INFO - Running task &#39;<span style="font-weight:bold">link</span>&#39;
+<span style="color:#0a0">✔ Build succeeded in 128ms, 849μs</span>
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">)</span><span style="color:#a50;font-weight:bold">✗</span> .&#47;hello
 Olá, World!
-```
+</pre>
 
 It all works fine, but to make things better, the `compile` task should be **incremental**, i.e. only the modified files
 should be re-compiled. That's what the next section will address.
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Making a task incremental" }}
+<div id="making-a-task-incremental"></div>
+### Making a task incremental
 
 An incremental build is one where after an initial build is completed, further builds re-use work done previously so
 that only work that is strictly necessary, given the changes, is performed.
@@ -398,12 +400,11 @@ to generate a `.d` file listing the dependencies of each compiled file.
 
 For example, using the same files from the previous section:
 
-```shell
-$ gcc -MMD -c hello.c          
-
-$ cat hello.d
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> gcc -MMD -c hello.c
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> cat hello.d
 hello.o: hello.c greeting.h
-```
+</pre>
 
 The compiler invocation above compiled an object file, `hello.o`, from the `hello.c` source, as well as a `hello.d` file
 which shows all the
@@ -495,9 +496,8 @@ It's become a fairly sophisticated task function now!
 And for this very reason, it would be nice to keep "implementation details" like this out of the build file,
 as will be shown in the next section.
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Extracting complex logic into dartle-src/" }}
+<div id="extracting-complex-logic"></div>
+### Extracting complex logic into dartle-src/
 
 Complex tasks should not be written directly in the build script, as they can make it hard to understand what the build
 is supposed to do by including too many details.
@@ -586,9 +586,8 @@ main(List<String> args) => run(args, tasks: {
 
 Very simple, but powerful!
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Clean builds" }}
+<div id="clean-builds"></div>
+### Clean builds
 
 Even though Dartle was designed to avoid the need for running clean builds, it's still possible there are mistakes
 that can prevent an incremental build from working. You may also want to test that things are still working when run
@@ -608,16 +607,15 @@ createCleanTask(tasks: [compileTask, linkTask])
 
 And run it with:
 
-```shell
-$ dartle clean
-2023-05-07 20:14:27.609901 - dartle[main 36395] - INFO - Executing 1 task out of a total of 3 tasks: 1 task selected
-2023-05-07 20:14:27.610095 - dartle[main 36395] - INFO - Running task 'clean'
-✔ Build succeeded in 3 ms
-```
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle clean
+2026-05-18 21:26:34.375665 - dartle[main 32494] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 4 tasks: 1 task selected
+2026-05-18 21:26:34.375754 - dartle[main 32494] - INFO - Running task &#39;<span style="font-weight:bold">clean</span>&#39;
+<span style="color:#0a0">✔ Build succeeded in 2ms, 675μs!</span>
+</pre>
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Default Tasks" }}
+<div id="default-tasks"></div>
+### Default tasks
 
 A very convenient thing to add to a Dartle build is a default task. That makes it just a tiny bit easier to run the most
 common build tasks, as instead of having to specify the task(s) that need to be run, you can type `dartle` and be
@@ -651,35 +649,39 @@ main(List<String> args) => run(args, tasks: {
     });
 ```
 
-{{end}}
-{{component /processed/fragments/_section.html}}
-{{ define sectionTitle "Profiling a build" }}
+<div id="profiling-a-build"></div>
+### Profiling a build
 
 Finally, make sure you understand your build performance by running the build with the `-l profile` option:
 
-```shell
-$ dartle -l profile
-2023-05-07 20:20:04.324333 - dartle[main 36682] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
-2023-05-07 20:20:09.615994 - dartle[main 36682] - PROFILE - Task '_compileDartleFile' completed successfully in 5.281 seconds
-2023-05-07 20:20:09.835265 - dartle[main 36682] - PROFILE - Post-run action of task '_compileDartleFile' completed successfully in 212 ms
-2023-05-07 20:20:09.835404 - dartle[main 36682] - INFO - Re-compiled dartle.dart in 5.502 seconds
-2023-05-07 20:20:10.047037 - dartle[main 36691] - PROFILE - Checked task 'compile' runCondition in 0 ms
-2023-05-07 20:20:10.047161 - dartle[main 36691] - INFO - Executing 2 tasks out of a total of 3 tasks: 1 task (default), 1 dependency
-2023-05-07 20:20:10.048725 - dartle[main 36691] - PROFILE - Collected 3 input and 0 output change(s) for 'compile' in 1 ms
-2023-05-07 20:20:10.048763 - dartle[main 36691] - INFO - Running task 'compile'
-2023-05-07 20:20:10.048878 - dartle-c[main 36691] - WARN - Missing .d file: hello.d
-2023-05-07 20:20:10.593449 - dartle[main 36691] - PROFILE - Task 'compile' completed successfully in 544 ms
-2023-05-07 20:20:10.593607 - dartle[main 36691] - INFO - Running task 'link'
-2023-05-07 20:20:10.680562 - dartle[main 36691] - PROFILE - Task 'link' completed successfully in 86 ms
-2023-05-07 20:20:10.685960 - dartle[main 36691] - PROFILE - Post-run action of task 'compile' completed successfully in 5 ms
-2023-05-07 20:20:10.688199 - dartle[main 36691] - PROFILE - Post-run action of task 'link' completed successfully in 2 ms
-2023-05-07 20:20:10.688283 - dartle[main 36691] - PROFILE - Garbage-collected cache in 0 ms
-✔ Build succeeded in 641 ms
-```
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle archive -l profile
+<span style="color:#a0a">2026-05-18 21:30:56.249169 - dartle-c[main 32938] - PROFILE - Parsed dcc configuration in 0ms</span>
+<span style="color:#a0a">2026-05-18 21:30:56.251366 - dartle[main 32938] - PROFILE - Checked task &#39;compileC&#39; runCondition in 1ms, 564μs</span>
+2026-05-18 21:30:56.251415 - dartle[main 32938] - INFO - Executing <span style="font-weight:bold">2 tasks</span> out of a total of 4 tasks: 1 task selected, 1 dependency
+<span style="color:#a0a">2026-05-18 21:30:56.252650 - dartle[main 32938] - PROFILE - Collected 0 input and 5 output change(s) for &#39;compileC&#39; in 1ms, 203μs</span>
+2026-05-18 21:30:56.252670 - dartle[main 32938] - INFO - Running task &#39;<span style="font-weight:bold">compileC</span>&#39;
+2026-05-18 21:30:56.252876 - dartle-c[main 32938] - INFO - Compiling object files into directory &quot;out&quot;
+
+
+<span style="color:#a0a">2026-05-18 21:30:56.302414 - dartle[main 32938] - PROFILE - Task &#39;compileC&#39; completed successfully in 49ms, 737μs</span>
+2026-05-18 21:30:56.302459 - dartle[main 32938] - INFO - Running task &#39;<span style="font-weight:bold">archiveObjects</span>&#39;
+2026-05-18 21:30:56.302650 - dartle-c[main 32938] - INFO - Creating archive &quot;libdartle-c.a&quot;
+
+
+<span style="color:#a0a">2026-05-18 21:30:56.320850 - dartle[main 32938] - PROFILE - Task &#39;archiveObjects&#39; completed successfully in 18ms, 380μs</span>
+<span style="color:#a0a">2026-05-18 21:30:56.324313 - dartle[main 32938] - PROFILE - Post-run action of task &#39;compileC&#39; completed successfully in 3ms, 429μs</span>
+<span style="color:#a0a">2026-05-18 21:30:56.325945 - dartle[main 32938] - PROFILE - Post-run action of task &#39;archiveObjects&#39; completed successfully in 1ms, 616μs</span>
+<span style="color:#a0a">2026-05-18 21:30:56.325987 - dartle[main 32938] - PROFILE - Garbage-collected cache in 8μs</span>
+<span style="color:#0a0">✔ Build succeeded in 77ms, 228μs!</span>
+</pre>
 
 {{end}}
 
 <hr>
+
+<div id="conclusion"></div>
+### Conclusion
 
 With this, we come to the end of the Dartle Overview armed with a fully incremental C build system!
 

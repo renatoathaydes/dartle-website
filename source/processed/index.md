@@ -9,18 +9,18 @@ Welcome to the Dartle Documentation.
 [![Dartle CI](https://github.com/renatoathaydes/dartle/workflows/Dartle%20CI/badge.svg)](https://github.com/renatoathaydes/dartle/)
 [![pub package](https://img.shields.io/pub/v/dartle.svg)](https://pub.dev/packages/dartle)
 
-To learn Dartle from the basics, check out the [Dartle Overview](dartle-overview.html) page.
+This page gives a short introduction to Dartle.
 
-For a quick introduction, read on.
+To learn Dartle from the basics, check out the [Dartle Overview](dartle-overview.html) page.
 
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Introduction" }}
 
-Dartle is a task-based build system written in the [Dart](https://dart.dev/) programming language.
+> Dartle is a task-based build system written in the [Dart](https://dart.dev/) programming language.
 
-**Dartle can be used to build anything that can be automated!**
+**Dartle can be used to build or automate things!**
 
-How exactly you automate your build with Dartle depends on your needs:
+How exactly you use it depends on your needs:
 
 * Write [Dart scripts](dartle-overview.html) to declare the build logic, like a more friendly and powerful Makefile.
 * Use [DartleDart](dartle-for-dart.html) to build Dart projects.
@@ -28,7 +28,9 @@ How exactly you automate your build with Dartle depends on your needs:
   Dartle as just a library.
 * Use the [Dartle Cache](cache.html) to drive an external build system or scripts.
 
-Dartle makes it easy to build most things using an easy, familiar language.
+## Example Dartle Script
+
+Dartle scripts are easy to read and write.
 
 For example, to compile all C files found in the `src` directory recursively, using `gcc`:
 
@@ -53,19 +55,16 @@ gcc(_) async => execProc(Process.start('gcc', [
 ]));
 ```
 
-Pretty simple and highly readable, unlike most build solutions out there.
+In the same directory as the above `darle.dart` script, you can run `dartle gcc` from the terminal:
 
-In the same directory as the above `darle.dart` script, you can run `dartle gcc`:
-
-```shell
-$ dartle gcc
-2023-05-09 20:05:06.542846 - dartle[main 51081] - INFO - Executing 1 task out of a total of 1 task: 1 task selected
-2023-05-09 20:05:06.542944 - dartle[main 51081] - INFO - Running task 'gcc'
-✔ Build succeeded in 528 ms
-
-$ ./mybinary 
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">basic-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle gcc
+2026-05-16 19:58:38.401860 - dartle[main 56752] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-16 19:58:38.401913 - dartle[main 56752] - INFO - Running task &#39;<span style="font-weight:bold">gcc</span>&#39;
+<span style="color:#0a0">✔ Build succeeded in 87ms, 368μs</span>
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">basic-c</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> .&#47;mybinary<span style="font-weight:bold"> </span>
 It works!
-```
+</pre>
 
 The above `gcc` task will only execute if changes are detected on its inputs or outputs.
 
@@ -84,6 +83,8 @@ import 'dart:io';
 import 'package:dartle/dartle.dart';
 import 'package:path/path.dart' as paths;
 
+const magnanimousVersion = '0.12';
+
 String userHome() => homeDir() ?? failBuild(reason: 'Cannot find user HOME');
 
 final magFile = File(paths.join(userHome(), '.magnanimous', 'mag'));
@@ -94,6 +95,7 @@ final magnanimousDownloadTask = Task(downloadMagnanimous,
 
 final magnanimousRunTask = Task(runMagnanimous,
     description: 'Builds the Dartle Website using Magnanimous',
+    argsValidator: const RunMagnanimousArgsValidator(),
     dependsOn: {magnanimousDownloadTask.name},
     runCondition: RunOnChanges(
         inputs: entities(['dartle.dart'], [DirectoryEntry(path: 'source')]),
@@ -120,14 +122,28 @@ Future<void> downloadMagnanimous(_) async {
   await magFile.parent.create();
   final magStream = download(
       Uri.parse('https://github.com/renatoathaydes/magnanimous/releases'
-          '/download/0.11.1/magnanimous-${_osArch()}'));
+          '/download/$magnanimousVersion/magnanimous-${_osArch()}'));
   await magFile.writeBinary(magStream, makeExecutable: true);
 }
 
-Future<void> runMagnanimous(_) async {
-  final code = await execProc(
-      Process.start(magFile.path, const ['-style', 'nord'], runInShell: true));
-  if (code != 0) failBuild(reason: 'magnanimous exited with code $code');
+Future<int> runMagnanimous(List<String> args) async {
+  final contextArgs = args.contains('github')
+      ? ['-globalctx', '_github_global_context']
+      : const [];
+  return await execProc(Process.start(
+      magFile.path, [...contextArgs, '-style', 'nord'],
+      runInShell: true));
+}
+
+class RunMagnanimousArgsValidator implements ArgsValidator {
+  const RunMagnanimousArgsValidator();
+
+  @override
+  String helpMessage() => 'Accepts the "github" argument only.';
+
+  @override
+  bool validate(List<String> args) =>
+      args.isEmpty || (args.length == 1 && args.first == 'github');
 }
 ```
 
@@ -143,22 +159,23 @@ has been downloaded before trying to run it!
 Because `runMagnanimous` is the default task, this build can be executed by running the `dartle` command,
 without any arguments, in the project's root directory.
 
-```shell
-$ dartle
-2023-05-06 19:01:55.244210 - dartle[main 23751] - INFO - Executing 1 task out of a total of 3 tasks: 1 task (default), 1 dependency, 1 up-to-date
-2023-05-06 19:01:55.244466 - dartle[main 23751] - INFO - Running task 'runMagnanimous'
-✔ Build succeeded in 156 ms
-```
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-website</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle
+2026-05-16 20:16:02.874559 - dartle[main 57437] - INFO - Executing <span style="font-weight:bold">2 tasks</span> out of a total of 3 tasks: 1 task (<span style="color:#555">default</span>), 1 dependency
+2026-05-16 20:16:02.874607 - dartle[main 57437] - INFO - Running task &#39;<span style="font-weight:bold">downloadMagnanimous</span>&#39;
+2026-05-16 20:16:03.546637 - dartle[main 57437] - INFO - Running task &#39;<span style="font-weight:bold">runMagnanimous</span>&#39;
+<span style="color:#0a0">✔ Build succeeded in 949ms, 5μs</span>
+</pre>
 
 You can execute any task you declared by passing its name as an argument to `dartle`.
 
 For example, to run the `runMagnanimous` task:
 
-```shell
-$ dartle runMagnanimous
-2023-05-06 19:03:44.552424 - dartle[main 24026] - INFO - Executing 0 tasks out of a total of 3 tasks: 1 task (default), 1 dependency, 2 up-to-date
-✔ Build succeeded in 110 ms
-```
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dartle-website</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle runMagnanimous
+<span style="color:#0a0">Everything is up-to-date!</span>
+<span style="color:#0a0">✔ Build succeeded in 11ms, 838μs</span>
+</pre>
 
 Dartle requires only a few letters to _find_ a task, so running `dartle run`, or `dartle rM` would work as well!
 

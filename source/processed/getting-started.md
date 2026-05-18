@@ -37,20 +37,17 @@ Dartle version 0.23.2
 
 If you run `dartle` on a directory where there's no `dartle.dart` file, Dartle will ask you if you want to create one.
 
-```shell
-$ mkdir temp
-  
-$ cd temp
-  
-$ dartle
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">examples</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> mkdir temp &amp;&amp; cd temp
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">temp</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">main</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle
 There is no dartle.dart file in the current directory.
-Would you like to create one [y/N]? y
-2023-05-26 17:44:11.210553 - dartle[main 75195] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
-2023-05-26 17:44:17.887181 - dartle[main 75195] - INFO - Re-compiled dartle.dart in 6.662 seconds
-2023-05-26 17:44:18.184342 - dartle[main 75214] - INFO - Executing 1 task out of a total of 2 tasks: 1 task (default)
-2023-05-26 17:44:18.184491 - dartle[main 75214] - INFO - Running task 'sample'
-✔ Build succeeded in 6 ms
-```
+Would you like to create one [y&#47;N]? y
+2026-05-16 20:49:16.265541 - dartle[main 59802] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
+2026-05-16 20:49:17.957360 - dartle[main 59802] - INFO - Re-compiled dartle.dart in 1.685 seconds
+2026-05-16 20:49:18.362166 - dartle[main 59809] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 2 tasks: 1 task (<span style="color:#555">default</span>)
+2026-05-16 20:49:18.362237 - dartle[main 59809] - INFO - Running task &#39;<span style="font-weight:bold">sample</span>&#39;
+<span style="color:#0a0">✔ Build succeeded in 3ms, 94μs</span>
+</pre>
 
 > Dartle logs using the pattern `${date} - ${loggerName}[${isolateName} ${PID}] - ${LEVEL} ${MESSAGE}`.
 > 
