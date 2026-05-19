@@ -4,7 +4,8 @@
 {{component /processed/fragments/_main.html}}\
 {{define mainTitle "Dartle Documentation"}}\
 
-The fundamental unit of work in Dartle is a `Task`. Dartle's main purpose is, fundamentally, to execute Tasks.
+The fundamental unit of work in Dartle is a `Task`. Dartle's main purpose is, essentially, to execute Tasks
+in the right order, and only if necessary given the task's declared `RunCondition`.
 
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "The simplest possible task" }}
@@ -12,41 +13,44 @@ The fundamental unit of work in Dartle is a `Task`. Dartle's main purpose is, fu
 A very basic task can be defined like this:
 
 ```dart
-hello(_) => print('Hello Dartle');
-
-final helloTask = Task(hello);
+final helloTask = Task((_) => print('Hello World'), name: 'hello');
 ```
 
-When the above task runs, the `hello` function is executed. The full Dartle script should look something like this:
+When the above task runs, the `hello` function is executed.
+
+The full `dartle.dart` script file should look something like this:
 
 ```dart
 import 'package:dartle/dartle.dart';
 
-hello(_) => print('Hello Dartle');
-
-final helloTask = Task(hello);
+final helloTask = Task((_) => print('Hello World'), name: 'hello');
 
 void main(List<String> args) {
   run(args, tasks: {helloTask});
 }
 ```
 
-The task takes the name of the function, in this case, `hello`. To run a task, give its name as an argument to the
-`dartle` command:
+To run a task, just pass its name to `dartle`:
 
-```shell
-$ dartle hello
-2023-05-26 20:48:38.147175 - dartle[main 75581] - INFO - Executing 1 task out of a total of 1 task: 1 task selected
-2023-05-26 20:48:38.147335 - dartle[main 75581] - INFO - Running task 'hello'
-Hello Dartle
-✔ Build succeeded in 0 ms
-```
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">dartle-1.0</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle hello
+2026-05-19 20:17:16.819861 - dartle[main 2742] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-19 20:17:16.819902 - dartle[main 2742] - INFO - Running task &#39;<span style="font-weight:bold">hello</span>&#39;
+Hello World
+<span style="color:#0a0">✔ Build succeeded in 281μs</span>
+</pre>
 
 > To invoke a task, you can type only its partial name as long as it's not ambiguous.
 > See the [Dartle CLI](cli.html) documentation for details.
 
-If a function takes a Dart lambda instead of a top-level function, its name must be provided explicitly, as shown in the
-next section.
+For convenience, a task _action_ that is a non-anonymous function does not need to declare a `name`, since that can be
+inferred from the function name. Hence, the following task is equivalent to the `helloTask` above:
+
+```dart
+void hello(_) => print('Hello World');
+
+final helloTask = Task(hello);
+```
 
 {{end}}
 {{component /processed/fragments/_section.html}}
@@ -94,13 +98,13 @@ final helloTask = Task(hello, argsValidator: const AcceptAnyArgs());
 Tasks that accept arguments (by default, a task does not accept any arguments, so an `argsValidator` must be provided
 as shown above) can be invoked with arguments by prepending task arguments with `:`, as shown below:
 
-```shell
-$ dartle hello :Joe :Mary
-2023-05-26 21:23:46.582896 - dartle[main 76494] - INFO - Executing 1 task out of a total of 1 task: 1 task selected, -2 dependencies
-2023-05-26 21:23:46.583053 - dartle[main 76494] - INFO - Running task 'hello'
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">dartle-1.0</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle hello :Joe :Mary
+2026-05-19 20:26:17.005156 - dartle[main 3489] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 1 task: 1 task selected
+2026-05-19 20:26:17.005200 - dartle[main 3489] - INFO - Running task &#39;<span style="font-weight:bold">hello</span>&#39;
 Hello Joe, Mary!
-✔ Build succeeded in 0 ms
-```
+<span style="color:#0a0">✔ Build succeeded in 292μs</span>
+</pre>
 
 Task actions may be asynchronous, in which case the action should return a `Future<void>`:
 
@@ -108,6 +112,16 @@ Task actions may be asynchronous, in which case the action should return a `Futu
 Future<void> uname(List<String> args) async => 
     await exec(Process.start('uname', args));
 ```
+
+Running this task on my laptop, I get this:
+
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">hello-world</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">dartle-1.0</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle uname
+2026-05-19 20:30:12.590474 - dartle[main 4248] - INFO - Executing <span style="font-weight:bold">1 task</span> out of a total of 2 tasks: 1 task selected
+2026-05-19 20:30:12.590526 - dartle[main 4248] - INFO - Running task &#39;<span style="font-weight:bold">uname</span>&#39;
+Darwin
+<span style="color:#0a0">✔ Build succeeded in 3ms, 723μs</span>
+</pre>
 
 To fail when some problem is detected, use the `failBuild` function:
 
@@ -154,9 +168,13 @@ Future<void> incremental(List<String> args, [ChangeSet? changeSet]) async {
 
 Every Task has a phase associated with it. Dartle comes with 3 built-in phases, which run in order:
 
-* setup
-* build (default phase)
-* tearDown
+```
++-------+     +-------+     +-----------+
+| setup | --> | build | --> | tearDown  |
++-------+     +-------+     +-----------+
+                  ^
+              (default)
+```
 
 More phases can be added by calling the [`TaskPhase.custom`](https://pub.dev/documentation/dartle/latest/dartle_dart/TaskPhase-class.html) factory constructor.
 
@@ -192,7 +210,7 @@ To declare inputs and outputs, [file collections](reference/file-collections.htm
 final runCondition = RunOnChanges(
   inputs: entities( // declare both files and directories
       const ['dartle.dart'], // files
-      [DirectoryEntry(path: 'source', fileExtensions: const {'.dart', '.c'})]), // dirs
+      [dirEntry('source', extensions: {'.dart', '.c'})]), // dirs
   outputs: dir('target'),
 );
 ```
@@ -222,7 +240,8 @@ Custom implementations can be provided.
 
 As we've seen, Tasks can depend on other Tasks.
 
-When task `A` depends on task `B`, running task `A` causes `B` to also run, even when not directly invoked.
+When task `A` depends on task `B`, running task `A` causes `B` to also run, even when not directly invoked
+(though tasks may be skipped if they are up-to-date).
 
 Task dependencies may be declared directly on the constructor:
 
@@ -230,21 +249,56 @@ Task dependencies may be declared directly on the constructor:
 final myTask = Task(action, dependsOn: const {'otherTask'});
 ```
 
-> A Task can only depend on other Tasks that run in the same phase as itself.
+> A Task can only depend on other Tasks that run in the same phase, or an earlier phase, as itself.
 
 In some cases, that's not possible because Tasks are declared in different projects.
 Before Dartle's `run` method is called, it's possible to add more dependencies to a Task after its creation:
 
 ```dart
-myTask.dependsOn(const {'newTask'});
+myTask.dependsOn(const {'anotherTask'});
 ```
 
-Notice that it's not possible to remove Task dependencies.
+However, it's not possible to remove Task dependencies.
 
 Dartle automatically checks if a Task's inputs and outputs overlap with that of another Task, and enforces that
 explicit dependencies between them are declared if an overlap is found.
 This avoids a common mistake where dependencies are not correctly declared, causing a Task to overwrite another
 Tasks' inputs or outputs.
+
+{{end}}
+{{component /processed/fragments/_section.html}}
+{{ define sectionTitle "Task requirements" }}
+
+Besides dependencies, tasks may also have _requirements_.
+
+Requirements are similar to dependencies, with some differences:
+
+* if task `A` requires task `B`, then, as with dependencies, running task `A` causes task `B` to run.
+* a task's requirements run BEFORE the task itself.
+* however, unlike with dependencies, a required task's status is not checked if it's not directly invoked.
+
+This means that if task `A` is up-to-date and a user invokes only task `A`, no tasks will be executed even if task `B`
+is a requirement of `A` and is NOT up-to-date.
+
+This is in constrast to a task dependency, since if task `A` had a dependency on `B`, and `B` was not up-to-date, then the status
+of task `A` would become `dependency-out-of-date` and both tasks would be executed.
+
+Declaring requirements in a `Task`'s constructor:
+
+```dart
+final myTask = Task(action, requires: const {'otherTask'});
+```
+
+Adding a requirement after creating a task:
+
+```dart
+myTask.requires(const {'anotherTask'});
+```
+
+> In most cases, task dependencies should be used. Task requirements are handy in a few cases, however. For example, when a task needs to
+  check if the environment changed before running, but shouldn't run unless its own inputs/outputs changed, you can add a task requirement
+  that checks the environment (which always executes if invoked, since it cannot have inputs/outputs) without forcing the other task to run
+  every time it's invoked.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
