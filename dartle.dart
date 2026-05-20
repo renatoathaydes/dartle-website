@@ -18,7 +18,7 @@ final magnanimousRunTask = Task(runMagnanimous,
     argsValidator: const RunMagnanimousArgsValidator(),
     dependsOn: {magnanimousDownloadTask.name},
     runCondition: RunOnChanges(
-        inputs: entities(['dartle.dart'], [DirectoryEntry(path: 'source')]),
+        inputs: entities(['dartle.dart'], [dirEntry('source')]),
         outputs: dir('target')));
 
 void main(List<String> args) {
