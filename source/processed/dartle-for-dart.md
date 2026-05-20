@@ -55,29 +55,31 @@ That's all you need!
 
 By default, it will contain the following tasks:
 
-```shell
-$ dartle -s
-======== Showing build information only, no tasks will be executed ========
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dart-project</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">dartle</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle -s
+2026-05-20 21:13:03.053400 - dartle[main 53594] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
+2026-05-20 21:13:05.046069 - dartle[main 53594] - INFO - Re-compiled dartle.dart in 1.987 seconds
+<span style="color:#00a">======== Showing build information only, no tasks will be executed ========</span>
 
 Tasks declared in this build:
 
-==> Setup Phase:
-  * clean
+<span style="color:#00a;font-style:italic">==&gt; Setup Phase:</span>
+  * <span style="font-weight:bold">clean</span>
       Deletes the outputs of all other tasks in this build.
-==> Build Phase:
-  * analyzeCode [up-to-date]
+<span style="color:#00a;font-style:italic">==&gt; Build Phase:</span>
+  * <span style="font-weight:bold">analyzeCode</span><span style="color:#a50"> [dependency-out-of-date]</span>
       Analyzes Dart source code
-  * build [default] [always-runs]
+  * <span style="font-weight:bold">build</span> <span style="color:gray;">[default] [always-runs]</span>
       Runs all enabled tasks.
-  * compileExe
+  * <span style="font-weight:bold">compileExe</span>
       Compiles Dart executables declared in pubspec. Argument may specify the name(s) of the executable(s) to compile.
-  * format [up-to-date]
+  * <span style="font-weight:bold">format</span><span style="color:#a50"> [out-of-date]</span>
       Formats all Dart source code.
-  * runPubGet [up-to-date]
-      Runs "pub get" in order to update dependencies.
-  * test [up-to-date]
+  * <span style="font-weight:bold">runPubGet</span><span style="color:#a50"> [out-of-date]</span>
+      Runs &quot;pub get&quot; in order to update dependencies.
+  * <span style="font-weight:bold">test</span><span style="color:#a50"> [dependency-out-of-date]</span>
       Runs Dart tests.
-==> TearDown Phase:
+<span style="color:#00a;font-style:italic">==&gt; TearDown Phase:</span>
   No tasks in this phase.
 
 The following tasks were selected to run, in order:
@@ -87,7 +89,7 @@ The following tasks were selected to run, in order:
       analyzeCode
           test
               build
-```
+</pre>
 
 As you can see, the `build` task is the default task, and it will automatically run:
 
@@ -107,32 +109,33 @@ If you explicitly invoke a certain task, it will cause any tasks it depends on t
 
 Run with the `-g` flag to see which tasks would run for a certain invocation, without actually running it:
 
-```shell
-$ dartle -g compile
-======== Showing build information only, no tasks will be executed ========
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dart-project</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">dartle</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle -g
+<span style="color:#00a">======== Showing build information only, no tasks will be executed ========</span>
 
 Tasks Graph:
 
 - analyzeCode
   +--- format
-  \--- runPubGet
+  &#92;--- runPubGet
 - build
   +--- analyzeCode ...
   |--- format
   |--- runPubGet
-  \--- test
-       \--- analyzeCode ...
+  &#92;--- test
+       &#92;--- analyzeCode ...
 - clean
 - compileExe
-  \--- analyzeCode ...
+  &#92;--- analyzeCode ...
 
 The following tasks were selected to run, in order:
 
-  runPubGet
   format
+  runPubGet
       analyzeCode
-          compileExe
-```
+          test
+              build
+</pre>
 
 > See the [Dartle CLI](cli.html) page for more details about options accepted by the `dartle` command.
 
@@ -183,28 +186,23 @@ occurred:
 Please add the dependencies explicitly.
 ```
 
-Running `dartle -s`, you can see that the set of tasks now changed:
+Running `dartle -g`, you can see that the set of tasks now changed:
 
-```shell
-$ dartle -s
-======== Showing build information only, no tasks will be executed ========
+<pre style="font-family: monospace; background:#000; color:#ccc;">
+<span style="color:#0a0;font-weight:bold">➜  </span><span style="color:#0aa;font-weight:bold">dart-project</span> <span style="color:#00a;font-weight:bold">git:(</span><span style="color:#a00;font-weight:bold">dartle</span><span style="color:#00a;font-weight:bold">) </span><span style="color:#a50;font-weight:bold">✗</span> dartle -g
+2026-05-20 21:22:51.322807 - dartle[main 54848] - INFO - Detected changes in dartle.dart or pubspec, compiling Dartle executable.
+2026-05-20 21:22:53.340965 - dartle[main 54848] - INFO - Re-compiled dartle.dart in 2.014 seconds
+<span style="color:#00a">======== Showing build information only, no tasks will be executed ========</span>
 
-Tasks declared in this build:
+Tasks Graph:
 
-==> Setup Phase:
-  * clean
-      Deletes the outputs of all other tasks in this build.
-==> Build Phase:
-  * build [default] [always-runs]
-      Runs all enabled tasks.
-  * runBuildRunner [out-of-date]
-      Runs the Dart build_runner tool.
-  * runPubGet [up-to-date]
-      Runs "pub get" in order to update dependencies.
-  * test [dependency-out-of-date]
-      Runs Dart tests.
-==> TearDown Phase:
-  No tasks in this phase.
+- build
+  +--- runBuildRunner
+  |     &#92;--- runPubGet
+  |--- runPubGet
+  &#92;--- test
+       &#92;--- runBuildRunner ...
+- clean
 
 The following tasks were selected to run, in order:
 
@@ -212,7 +210,7 @@ The following tasks were selected to run, in order:
       runBuildRunner
           test
               build
-```
+</pre>
 
 The Dart build-runner would now automatically run when needed only, which is very helpful as it takes a long time to complete.
 

@@ -1,4 +1,4 @@
-{{ define title "Dartle Home" }}\
+{{ define title "Home" }}\
 {{ define order 0 }}\
 {{ include /processed/fragments/_header.html }}\
 {{component /processed/fragments/_main.html}}\
@@ -98,7 +98,7 @@ final magnanimousRunTask = Task(runMagnanimous,
     argsValidator: const RunMagnanimousArgsValidator(),
     dependsOn: {magnanimousDownloadTask.name},
     runCondition: RunOnChanges(
-        inputs: entities(['dartle.dart'], [DirectoryEntry(path: 'source')]),
+        inputs: entities(['dartle.dart'], [dirEntry('source')]),
         outputs: dir('target')));
 
 void main(List<String> args) {

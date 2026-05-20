@@ -7,8 +7,24 @@
 The fundamental unit of work in Dartle is a `Task`. Dartle's main purpose is, essentially, to execute Tasks
 in the right order, and only if necessary given the task's declared `RunCondition`.
 
+This page explain in detail how to create and configure tasks.
+
+## Table of Contents
+
+- [The simplest possible task](#simplest-task)
+- [A fully configured task](#full-task)
+- [Basic task action](#basic-task)
+- [Incremental task action](#incremental-task)
+- [Task phases](#task-phases)
+- [Determining when a task needs to run](#determining-task-needs-to-run)
+- [Validating task arguments](#validating-task-args)
+- [Task dependencies](#task-dependencies)
+- [Task requirements](#task-requirements)
+- [Task isolation](#task-isolation)
+
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "The simplest possible task" }}
+{{ define sectionId "simplest-task" }}
 
 A very basic task can be defined like this:
 
@@ -55,6 +71,7 @@ final helloTask = Task(hello);
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "A fully configured task" }}
+{{ define sectionId "full-task" }}
 
 A full task definition can include many details, as shown in this example:
 
@@ -68,7 +85,8 @@ final exampleTask = Task(_exampleTask,
       outputs: file('output.txt'),
     ),
     argsValidator: const AcceptAnyArgs(),
-    dependsOn: const {'hello'});
+    dependsOn: const {'hello'},
+    requires: const {'other'});
 ```
 
 The configuration components of a Task will be explained in the next sections.
@@ -76,6 +94,7 @@ The configuration components of a Task will be explained in the next sections.
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Basic Task Action" }}
+{{ define sectionId "basic-task" }}
 
 A Task's action is the function it executes. In its simplest form, a task action can declare an untyped,
 ignored argument, as we've seen in earlier examples:
@@ -137,6 +156,7 @@ Future<void> uname(List<String> args) async {
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Incremental Task Action" }}
+{{ define sectionId "incremental-task" }}
 
 Incremental tasks may take a second, optional argument of type `ChangeSet?`, which will be non-null when an incremental
 build is possible.
@@ -165,6 +185,7 @@ Future<void> incremental(List<String> args, [ChangeSet? changeSet]) async {
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Task Phases" }}
+{{ define sectionId "task-phases" }}
 
 Every Task has a phase associated with it. Dartle comes with 3 built-in phases, which run in order:
 
@@ -176,7 +197,7 @@ Every Task has a phase associated with it. Dartle comes with 3 built-in phases, 
               (default)
 ```
 
-More phases can be added by calling the [`TaskPhase.custom`](https://pub.dev/documentation/dartle/latest/dartle_dart/TaskPhase-class.html) factory constructor.
+More phases can be added by calling the [`TaskPhase.custom`](https://pub.dev/documentation/dartle/latest/dartle/TaskPhase-class.html) factory constructor.
 
 A Task phase only starts running after the preceeding phase has completed. That means that a Task associated with the
 `setup` phase will always run before a Task in the `build` phase, even if there's no dependencies between them.
@@ -191,15 +212,16 @@ the dependency to run when it's out-of-date even when not invoked, which wouldn'
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Determining when a task needs to run" }}
+{{ define sectionId "determining-task-needs-to-run" }}
 
-A Task will only run if its [`RunCondition`](https://pub.dev/documentation/dartle/latest/dartle_dart/RunCondition-mixin.html)
+A Task will only run if its [`RunCondition`](https://pub.dev/documentation/dartle/latest/dartle/RunCondition-mixin.html)
 reports that it should.
 
 > There are several types of `RunCondition` available in Dartle, including `RunToDelete` and `RunAtMostEvery`.
 > Follow the link above for the full list.
 > Users can also implement their own `RunCondition` if none of the available implementations suits their needs.
 
-The most common implementation of `RunCondition` is [`RunOnChanges`](https://pub.dev/documentation/dartle/latest/dartle_dart/RunOnChanges-class.html),
+The most common implementation of `RunCondition` is [`RunOnChanges`](https://pub.dev/documentation/dartle/latest/dartle/RunOnChanges-class.html),
 which runs a task when any of its inputs or outputs has changed. It is implemented using the
 [Dartle Cache](cache.html), which keeps track of file system changes in the project.
 
@@ -221,11 +243,12 @@ directory having the extensions `.dart` or `.c` changed, or if any file under th
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Validating task arguments" }}
+{{ define sectionId "validating-task-args" }}
 
-A Task can have an [ArgsValidator](https://pub.dev/documentation/dartle/latest/dartle_dart/ArgsValidator-mixin.html)
+A Task can have an [ArgsValidator](https://pub.dev/documentation/dartle/latest/dartle/ArgsValidator-mixin.html)
 associated with it.
 
-By default, tasks use the [DoNotAcceptArgs](https://pub.dev/documentation/dartle/latest/dartle_dart/DoNotAcceptArgs-class.html)
+By default, tasks use the [DoNotAcceptArgs](https://pub.dev/documentation/dartle/latest/dartle/DoNotAcceptArgs-class.html)
 validator, which mean that trying to pass arguments to them causes an error.
 
 Other available implementations include `AcceptAnyArgs` (zero or more args) and `ArgsCount` (a specific range of args).
@@ -237,6 +260,7 @@ Custom implementations can be provided.
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Task dependencies" }}
+{{ define sectionId "task-dependencies" }}
 
 As we've seen, Tasks can depend on other Tasks.
 
@@ -268,6 +292,7 @@ Tasks' inputs or outputs.
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Task requirements" }}
+{{ define sectionId "task-requirements" }}
 
 Besides dependencies, tasks may also have _requirements_.
 
@@ -295,14 +320,24 @@ Adding a requirement after creating a task:
 myTask.requires(const {'anotherTask'});
 ```
 
-> In most cases, task dependencies should be used. Task requirements are handy in a few cases, however. For example, when a task needs to
-  check if the environment changed before running, but shouldn't run unless its own inputs/outputs changed, you can add a task requirement
-  that checks the environment (which always executes if invoked, since it cannot have inputs/outputs) without forcing the other task to run
-  every time it's invoked.
+In most cases, task dependencies should be used instead of requirements.
+
+Task requirements are, however, needed in a few cases. For example, sometimes a task needs to check the environemnt for things like
+environment variables, or even determine the path of a binary that needs to be called. A task that does that must inherently run
+every time, since the environment can change and the only way to know if it did is by running the task. This kind of task is a good
+candidate for a task requirement.
+
+The task that depends on the environment is what the user actually wants to call, and the task
+shouldn't execute every time just because the environment may have changed. So, the task only executes if its own inputs/outputs
+change, but if it does, its requirement is also going to be invoked, allowing it to provide some information to the main task
+_off-band_.
+
+> See also [Task isolation](#task-isolation) for more information about how tasks can share data without using IO.
 
 {{end}}
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "Task Isolation" }}
+{{ define sectionId "task-isolation" }}
 
 Tasks are likely to run in their own Dart [Isolate](https://dart.dev/language/concurrency#how-isolates-work). Whether
 they will, depends on CLI options, number of tasks running, and the environment (number of CPUs available).
@@ -314,8 +349,10 @@ For this reason, a Task must not make assumptions about its global environment. 
 for example, to use global variables to _communicate_ between different tasks. Global variables are not
 propagated to different Isolates.
 
-The only safe way to communicate between tasks is by using the file system and ensuring dependencies
-between tasks are set up appropriately, so it's safe to assume a task runs before or after another.
+The only safe ways to communicate between tasks are:
+
+* by using the file system and ensuring dependencies between tasks are set up appropriately, so it's safe to assume a task runs before or after another.
+* using state [actors](https://pub.dev/documentation/actors/latest/actors/). Actors can be passed to other actors via `toSendable()` and hence can be shared.
 
 Another limitation caused by Isolates is that not every Dart Object can be _sent_ to another Isolate,
 hence if a Task's action contains state (which is possible because a Dart Function can be a stateful Object),

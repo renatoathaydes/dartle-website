@@ -1,5 +1,5 @@
-{{ define title "Derived Build Tools" }}\
-{{ define order 7 }}\
+{{ define title "Helper Functions" }}\
+{{ define order 1 }}\
 {{ include /processed/fragments/_header.html }}\
 {{component /processed/fragments/_main.html}}\
 {{define mainTitle "Dartle Documentation"}}\
@@ -12,7 +12,9 @@ which may not be so easy using just the Dart standard library.
 
 Dartle tries to fill the gap with the following helper functions:
 
-* [`download`](https://pub.dev/documentation/dartle/latest/dartle_dart/download.html)
+> For helper functions related to declaring files/directories, normally used together with [`RunOnChanges`](https://pub.dev/documentation/dartle/latest/dartle/RunOnChanges-class.html), like `file`, `dir` etc. check out the [File Collections](file-collections.html) page.
+
+* [`download`](https://pub.dev/documentation/dartle/latest/dartle/download.html)
 
 For downloading binary data.
 
@@ -49,7 +51,7 @@ final stream = download(
 );
 ```
 
-* [`downloadText`](https://pub.dev/documentation/dartle/latest/dartle_dart/downloadText.html)
+* [`downloadText`](https://pub.dev/documentation/dartle/latest/dartle/downloadText.html)
 
 For downloading text data.
 
@@ -57,7 +59,7 @@ It works similarly to `download`, but returns a `Future<String>`.
 
 Besides the `download` configuration options, `downloadText` also accepts a `Encoding encoding` parameter.
 
-* [`downloadJson`](https://pub.dev/documentation/dartle/latest/dartle_dart/downloadJson.html)
+* [`downloadJson`](https://pub.dev/documentation/dartle/latest/dartle/downloadJson.html)
 
 For downloading and automatically parsing JSON data.
 
@@ -65,7 +67,7 @@ It works similarly to `download`, but returns a `Future<Object?>`.
 
 It takes the same options as `downloadText`.
 
-* [tar](https://pub.dev/documentation/dartle/latest/dartle_dart/tar.html)
+* [tar](https://pub.dev/documentation/dartle/latest/dartle/tar.html)
 
 Tars files in a [FileCollection](file-collections.html) into a tar ball.
 
@@ -89,7 +91,7 @@ Future<void> distribution(_) => tar(dir('target'),
     encoder: const NoEncoding());
 ```
 
-* [untar](https://pub.dev/documentation/dartle/latest/dartle_dart/untar.html)
+* [untar](https://pub.dev/documentation/dartle/latest/dartle/untar.html)
 
 Untars a tarball on a given directory.
 
@@ -105,7 +107,7 @@ main() async {
 }
 ```
 
-* [tempDir](https://pub.dev/documentation/dartle/latest/dartle_dart/tempDir.html)
+* [tempDir](https://pub.dev/documentation/dartle/latest/dartle/tempDir.html)
 
 Creates a temporary directory (under the system's temporary directory).
 
@@ -115,7 +117,7 @@ Example:
 final temp = tempDir(suffix: 'my-tests');
 ```
 
-* [homeDir](https://pub.dev/documentation/dartle/latest/dartle_dart/homeDir.html)
+* [homeDir](https://pub.dev/documentation/dartle/latest/dartle/homeDir.html)
 
 Get the user home directory if available.
 
@@ -125,7 +127,7 @@ Example:
 final home = homeDir() ?? tempDir().path;
 ```
 
-* [ignoreExceptions](https://pub.dev/documentation/dartle/latest/dartle_dart/ignoreExceptions.html)
+* [ignoreExceptions](https://pub.dev/documentation/dartle/latest/dartle/ignoreExceptions.html)
 
 Sometimes, it's unavoidable that a build must run some action in a best-effort manner. If it fails, nothing
 significant should happen. This is often the case with cleanup tasks, specially given that Dart's `File.delete`
@@ -139,7 +141,7 @@ main() async {
 }
 ```
 
-* [failBuild](https://pub.dev/documentation/dartle/latest/dartle_dart/failBuild.html)
+* [failBuild](https://pub.dev/documentation/dartle/latest/dartle/failBuild.html)
 
 Fails a build by throwing a `DartleException`, which is handled cleanly by Dartle.
 
@@ -166,7 +168,7 @@ main() {
 }
 ```
 
-* [deleteAll](https://pub.dev/documentation/dartle/latest/dartle_dart/deleteAll.html)
+* [deleteAll](https://pub.dev/documentation/dartle/latest/dartle/deleteAll.html)
 
 Deletes all files included in a [FileCollection](file-collections.html).
 
@@ -178,7 +180,7 @@ main() async {
 }
 ```
 
-* [createCleanTask](https://pub.dev/documentation/dartle/latest/dartle_dart/createCleanTask.html)
+* [createCleanTask](https://pub.dev/documentation/dartle/latest/dartle/createCleanTask.html)
 
 Creates a task that, when executed, deletes the outputs of all given tasks.
 

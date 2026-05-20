@@ -1,5 +1,5 @@
-{{ define title "Derived Build Tools" }}\
-{{ define order 7 }}\
+{{ define title "File Collections" }}\
+{{ define order 2 }}\
 {{ include /processed/fragments/_header.html }}\
 {{component /processed/fragments/_main.html}}\
 {{define mainTitle "Dartle Documentation"}}\
@@ -7,21 +7,21 @@
 {{component /processed/fragments/_section.html}}
 {{ define sectionTitle "File Collections" }}
 
-Dartle comes with a powerful [`FileCollection`](https://pub.dev/documentation/dartle/latest/dartle_dart/FileCollection-class.html) type.
+Dartle comes with a powerful [`FileCollection`](https://pub.dev/documentation/dartle/latest/dartle/FileCollection-class.html) type.
 It makes it easy to work with files and directories.
 
-File collections are mostly used with [RunOnChanges](https://pub.dev/documentation/dartle/latest/dartle_dart/RunOnChanges-class.html),
+File collections are mostly used with [RunOnChanges](https://pub.dev/documentation/dartle/latest/dartle/RunOnChanges-class.html),
 which can be used as a `runCondition` of a Task.
 
 ### Files
 
-To create a `FileCollection` containing a single file:
+To create a `FileCollection` containing a single file, use the [`file`](https://pub.dev/documentation/dartle/latest/dartle/file.html) function:
 
 ```dart
 final afile = file('myfile.txt');
 ```
 
-Multiple files:
+Multiple files can be specified with [`files`](https://pub.dev/documentation/dartle/latest/dartle/files.html):
 
 ```dart
 final someFiles = files({'myfile.txt', 'another/file.md'});
@@ -29,8 +29,9 @@ final someFiles = files({'myfile.txt', 'another/file.md'});
 
 ### Directories
 
-To create a `FileCollection` containing a single directory, with everything within it except for
-hidden files (whose names start with `.`):
+To create a `FileCollection` containing a single directory, use [`dir`](https://pub.dev/documentation/dartle/latest/dartle/dir.html).
+
+Example: collection including everything within the `mydir` directory (and sub-directories), except for hidden files (whose names start with `.`):
 
 ```dart
 final adir = dir('mydir');
@@ -46,17 +47,17 @@ final aCollection = dir('mydir', fileExtensions: {'.dart', '.rs'},
     allowAbsolutePaths: true); // not recommended, makes a build non-deterministic
 ```
 
-A `dirs` function is also available for cases where more than one root directory exists which takes the
-same options as `dir`.
+A [`dirs`](https://pub.dev/documentation/dartle/latest/dartle/dirs.html) function is also available for cases where more than one root directory exists which takes the same options as `dir`.
 
 ### Both files and directories
 
-For selecting both files and directories, use `entities`:
+For selecting both files and directories, use [`entities`](https://pub.dev/documentation/dartle/latest/dartle/entities.html) and
+[`dirEntry`](https://pub.dev/documentation/dartle/latest/dartle/dirEntry.html):
 
 ```dart
 final myCollection = entities( // declare both files and directories
   const ['dartle.dart'], // files
-  [DirectoryEntry(path: 'source', fileExtensions: const {'.dart', '.c'})]); // dirs
+  [dirEntry('source', extensions: const {'.dart', '.c'})]); // dirs
 ```
 
 {{end}}
@@ -73,7 +74,7 @@ Notice that there's also `includedEntities()`, which does not **resolve** the co
 file system entities included explicitly in the collection.
 
 > To delete everything in a `FileCollection`, use
-> [deleteAll](https://pub.dev/documentation/dartle/latest/dartle_dart/deleteAll.html).
+> [deleteAll](https://pub.dev/documentation/dartle/latest/dartle/deleteAll.html).
 
 To check if a certain file or directory _belongs_ to a `FileCollection`, use `includesFile` and
 `includesDirectory`, respectively.
