@@ -14,6 +14,8 @@ dartle
 dartle run :github
 ```
 
+> To publish, simply push to the `main` branch.
+
 ## Create termninal samples
 
 Use `script` to capture a session, then pipe the file to [ansi-to-html.dart](utils/ansi-to-html.dart).
