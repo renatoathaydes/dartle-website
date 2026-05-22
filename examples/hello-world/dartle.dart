@@ -1,6 +1,7 @@
 import 'package:dartle/dartle.dart';
 
-main(List<String> args) => run(args, tasks: {Task(hello)});
+void hello(List<String> args) => print('Hello ${args.join(', ')}!');
 
-hello(_) => print('Hello Dartle');
-
+void main(List<String> args) {
+  run(args, tasks: {Task(hello, argsValidator: const AcceptAnyArgs())});
+}
